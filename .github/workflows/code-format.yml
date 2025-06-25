@@ -1,0 +1,52 @@
+name: Code Format and Auto PR
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [develop]
+
+jobs:
+  format-and-pr:
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.base_ref, 'develop') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+
+      # --- C/C++ ---
+      - name: Format C/C++ with clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+          find . -regex '.*\.\(cpp\|hpp\|cu\|cuh\|c\|h\)' -exec clang-format -style=file -i {} \;
+
+      # --- CMake ---
+      - name: Format CMake files
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pipx
+          pipx install cmakelang
+          find . -regex '.*\.\(cmake\)' -exec cmake-format -i {} \;
+          find . -name 'CMakeLists.txt' -exec cmake-format -i {} \;
+
+      # --- JSON ---
+      - name: Format JSON files
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          find . -regex '.*\.\(json\)' -exec bash -c "jq . {} > {}.tmp && mv {}.tmp {}" \;
+
+      # --- Create Pull Request ---
+      - name: Create PR with formatted code
+        uses: peter-evans/create-pull-request@v6.0.4
+        with:
+          commit-message: C/C++/QML formatted code
+          branch: formatted_code
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          title: Fix the format of your nice code
+          body: Every time you change the format, I am here to fix your mess.
+
