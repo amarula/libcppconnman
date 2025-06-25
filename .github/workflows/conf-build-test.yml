@@ -1,0 +1,131 @@
+name: push-build-test-lint-release
+run-name: ${{ github.actor }} ${{ github.event_name }} to ${{ github.event.pull_request.base.ref }}
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build_test_package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build doxygen clang-tidy python3-pip
+
+      - name: Check if formatted_code branch exists
+        if: ${{ github.event_name == 'pull_request' && startsWith(github.base_ref, 'main') }}
+        run: |
+          if git ls-remote --heads origin formatted_code | grep formatted_code; then
+              echo "Error: The 'formatted_code' branch exists. Formatting changes are not integrated.";
+              exit 1;
+          else
+              echo "The 'formatted_code' branch does not exist. Proceeding.";
+          fi
+
+      - name: Configure, build, and test
+        run: cmake --workflow --preset default-develop
+
+      - name: Create docs
+        run: |
+          cmake -E make_directory ${{ runner.temp }}/common
+          cmake --workflow --preset default-documentation
+          cp -r doc/html ${{ runner.temp }}/common/
+
+      - name: Clang-tidy
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          pip3 install pyyaml
+          COMPILE_COMMANDS=$(find . -name compile_commands.json | head -n 1)
+          if [ -z "$COMPILE_COMMANDS" ]; then
+            echo "No compile_commands.json found. Skipping clang-tidy-diff."
+            exit 0
+          fi
+          git remote add upstream "https://github.com/${{ github.event.pull_request.base.repo.full_name }}"
+          git fetch --no-tags --no-recurse-submodules upstream "${{ github.event.pull_request.base.ref }}"
+          git diff -U0 "$(git merge-base HEAD "upstream/${{ github.event.pull_request.base.ref }}")" | \
+            clang-tidy-diff -p1 -path "$(dirname "$COMPILE_COMMANDS")" -export-fixes ${{ runner.temp }}/common/clang-fixes.yml
+
+      - name: Export PR variables
+        run: |
+          echo "${{ github.event.number }}" >  ${{ runner.temp }}/common/pr_number
+          echo "${{ github.event.pull_request.head.repo.full_name }}" > ${{ runner.temp }}/common/pr-head-repo
+          echo "${{ github.event.pull_request.head.sha }}" > ${{ runner.temp }}/common/pr-head-sha
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: build/default-develop/packages-default-develop/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: common
+          path: |
+            ${{ runner.temp }}/common/*
+
+  release-deploy:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    needs: [build_test_package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Move docs to website dir
+        run: mv artifacts/common/html github-pages
+
+      - name: Clean packages
+        run: |
+          rm -rf artifacts/*/_CPack_Packages
+          mv artifacts/common . || true
+
+      - name: Create CHANGELOG
+        run: |
+          git log $(git rev-list --tags --skip=1 --max-count=1 | xargs git describe --tags --abbrev=0)..$(git describe --tags --abbrev=0) \
+            --pretty=format:"* %h - %s (%an, %ar)" > CHANGELOG.md
+
+      - name: Package GitHub Page content
+        working-directory: ${{ github.workspace }}/github-pages
+        run: |
+          cmake -E make_directory ${{ runner.temp }}/page-packages
+          cmake -E tar c ${{ runner.temp }}/page-packages/github-pages.tar -- .
+
+      - name: Release
+        if: ${{ inputs.release == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./artifacts/*/*
+          body_path: ./CHANGELOG.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/page-packages/*
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
