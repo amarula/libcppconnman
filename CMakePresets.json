@@ -21,7 +21,7 @@
         "BUILD_TESTS": "ON",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BUILD_DOCS": "ON",
-	"BUILD_EXAMPLES": "ON"
+        "BUILD_EXAMPLES": "ON"
       }
     }
   ],
@@ -80,14 +80,13 @@
           "type": "test",
           "name": "default-develop"
         },
-	{
+        {
           "type": "package",
           "name": "default-develop"
-		
-	}
+        }
       ]
     },
-     {
+    {
       "name": "default-documentation",
       "steps": [
         {

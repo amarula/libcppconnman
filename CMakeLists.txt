@@ -74,8 +74,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   if(BUILD_DOCS)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
-	    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/doc")
-	    set(DOXYGEN_EXCLUDE_PATTERNS  "*/doc/*" "*/build/*" "${CMAKE_CURRENT_BINARY_DIR}/*")
+      set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/doc")
+      set(DOXYGEN_EXCLUDE_PATTERNS "*/doc/*" "*/build/*"
+                                   "${CMAKE_CURRENT_BINARY_DIR}/*")
       doxygen_add_docs(doxygen_docs ${PROJECT_SOURCE_DIR}
                        COMMENT "Generate man pages")
     endif(DOXYGEN_FOUND)
