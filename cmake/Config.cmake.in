@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+find_dependency(PkgConfig)
+pkg_check_modules(GIO_UNIX REQUIRED IMPORTED_TARGET gio-unix-2.0)
+include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-config.cmake")
