@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+
+<node name="/">
+    <interface name="net.connman.Clock">
+
+        <!-- Methods -->
+        <method name="GetProperties">
+            <annotation name="org.freedesktop.DBus.GLib.Async" value="false"/> 
+            <arg name="properties" direction="out" type="a{sv}"/>
+        </method>
+        <method name="SetProperty">
+            <arg name="name" type="s" direction="in"/>
+            <arg name="value" type="v" direction="in"/>
+        </method>
+
+        <!-- Signals -->
+		<signal name="PropertyChanged">
+			<arg type="s" name="name"/>
+			<arg type="v" name="value"/>
+		</signal>
+
+        <!-- Properties -->
+        <property name="Time" type="u" access="readwrite"/>
+        <property name="TimeUpdates" type="s" access="readwrite"/>
+        <property name="Timezone" type="s" access="readwrite"/>
+        <property name="TimezoneUpdates" type="s" access="readwrite"/>
+        <property name="Timeservers" type="as" access="readwrite"/>
+    
+    </interface>
+</node>
