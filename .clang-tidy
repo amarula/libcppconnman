@@ -1,0 +1,24 @@
+---
+Checks:
+  -*,
+  bugprone-*,
+  clang-*,
+  google-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -google-build-using-namespace,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -bugprone-easily-swappable-parameters
+
+WarningsAsErrors: '*'
+HeaderFilterRegex: 'src'
+FormatStyle: file
+
+CheckOptions:
+  - key: misc-include-cleaner.MissingIncludes
+    value: false
+...
