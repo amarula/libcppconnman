@@ -1,0 +1,68 @@
+---
+Checks:
+  -*,
+  bugprone-*,
+  clang-*,
+  google-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*
+
+HeaderFilterRegex: 'src'
+FormatStyle: file
+
+CheckOptions:
+  - key: readability-identifier-naming.StaticVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.StaticVariablePrefix
+    value: ''
+  - key: readability-identifier-naming.StaticVariableSuffix
+    value: ''
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PublicMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.LocalVariableCase
+    value: lower_case
+
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+
+  - key: readability-identifier-naming.PrivateMethodCase
+    value: lower_case
+  - key: readability-identifier-naming.PublicMethodCase
+    value: camelCase
+  - key: readability-identifier-naming.ProtectedMethodCase
+    value: camelCase
+
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: UPPER_CASE
+
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+
+  - key: readability-identifier-naming.NamespaceCase
+    value: CamelCase
