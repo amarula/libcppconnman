@@ -1,0 +1,134 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "default-release",
+      "displayName": "Default Release",
+      "description": "Default configuration for release with runtime components only",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_SHARED_LIBS": "ON",
+        "BUILD_CONNMAN": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "default-develop",
+      "displayName": "Default Config for development",
+      "description": "Default configuration for development, release runtime and dev components, build tests ",
+      "inherits": "default-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTS": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_DOCS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default-release",
+      "configurePreset": "default-release"
+    },
+    {
+      "name": "default-develop",
+      "configurePreset": "default-develop"
+    },
+    {
+      "name": "default-documentation",
+      "configurePreset": "default-develop",
+      "targets": "doxygen_docs"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default-develop",
+      "configurePreset": "default-develop",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ],
+  "packagePresets": [
+    {
+      "name": "default-develop",
+      "configurePreset": "default-develop",
+      "generators": [
+        "TGZ"
+      ],
+      "variables": {
+        "CPACK_COMPONENTS_GROUPING": "ALL_COMPONENTS_IN_ONE",
+        "CPACK_PACKAGE_CONTACT": "develop@amarulasolutions.com",
+        "CPACK_PACKAGE_VENDOR": "amarulasolutions"
+      },
+      "packageDirectory": "packages-${presetName}"
+    },
+    {
+      "name": "default-runtime-release",
+      "configurePreset": "default-release",
+      "inherits": "default-develop",
+      "variables": {
+        "CPACK_COMPONENTS_GROUPING": "ALL_COMPONENTS_IN_ONE",
+        "CPACK_ARCHIVE_COMPONENT_INSTALL": "ON",
+        "CPACK_COMPONENTS_ALL": "GDbusCpp",
+        "CPACK_PACKAGE_CONTACT": "develop@amarulasolutions.com",
+        "CPACK_PACKAGE_VENDOR": "amarulasolutions"
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "default-develop",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "default-develop"
+        },
+        {
+          "type": "build",
+          "name": "default-develop"
+        },
+        {
+          "type": "test",
+          "name": "default-develop"
+        },
+        {
+          "type": "package",
+          "name": "default-develop"
+        }
+      ]
+    },
+    {
+      "name": "default-release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "default-release"
+        },
+        {
+          "type": "build",
+          "name": "default-release"
+        },
+        {
+          "type": "package",
+          "name": "default-runtime-release"
+        }
+      ]
+    },
+    {
+      "name": "default-documentation",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "default-develop"
+        },
+        {
+          "type": "build",
+          "name": "default-documentation"
+        }
+      ]
+    }
+  ]
+}
