@@ -18,7 +18,6 @@ Connman::Connman()
       clock_{std::shared_ptr<Clock>(new Clock(dbus_.get()))},
       manager_{std::shared_ptr<Manager>(new Manager(dbus_.get()))} {
     clock_->getProperties();
-    manager_->init();
 }
 
 }  // namespace Amarula::DBus::G::Connman
