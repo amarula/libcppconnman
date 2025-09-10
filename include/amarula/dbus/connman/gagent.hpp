@@ -3,6 +3,7 @@
 #include <glib.h>
 
 #include <functional>
+#include <string>
 #include <utility>
 
 namespace Amarula::DBus::G::Connman {
@@ -11,10 +12,11 @@ class Connman;
 class Agent {
     GDBusNodeInfo *node_info_;
     guint registration_id_{0};
-    GDBusConnection *connection_{nullptr};
-    static constexpr const auto AGENT_PATH{"/net/amarula/gconnman/agent"};
+    GDBusConnection* connection_{nullptr};
+    std::string path_{"/net/amarula/gconnman/agent"};
 
-    explicit Agent(GDBusConnection *connection);
+    explicit Agent(GDBusConnection* connection,
+                   const std::string& path = std::string());
 
     using RequestInputCallback =
         std::function<GVariant *(const gchar *service, GVariant *fields)>;
