@@ -27,7 +27,11 @@ static constexpr const char *INTROSPECTION_XML =
     "  </interface>"
     "</node>";
 
-Agent::Agent(GDBusConnection *connection) : connection_{connection} {
+Agent::Agent(GDBusConnection *connection, const std::string &path)
+    : connection_{connection} {
+    if (!path.empty()) {
+        path_ = path;
+    }
     GError *err = nullptr;
     node_info_ = g_dbus_node_info_new_for_xml(INTROSPECTION_XML, &err);
     if (node_info_ == nullptr) {
@@ -38,7 +42,7 @@ Agent::Agent(GDBusConnection *connection) : connection_{connection} {
     }
 
     registration_id_ = g_dbus_connection_register_object(
-        connection, AGENT_PATH, *(node_info_->interfaces), &INTERFACE_VTABLE,
+        connection, path_.c_str(), *(node_info_->interfaces), &INTERFACE_VTABLE,
         this, nullptr, &err);
 
     if (registration_id_ == 0) {
