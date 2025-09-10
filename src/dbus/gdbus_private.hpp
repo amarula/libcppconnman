@@ -16,9 +16,10 @@ class EnumStringMap {
    public:
     using Pair = std::pair<Enum, std::string_view>;
 
-    constexpr explicit EnumStringMap(std::array<Pair, N> init) : data_{init} {}
+    constexpr explicit EnumStringMap(const std::array<Pair, N>& init)
+        : data_{init} {}
 
-    [[nodiscard]] constexpr auto to_string(Enum enum_value) const
+    [[nodiscard]] constexpr auto toString(Enum enum_value) const
         -> std::string_view {
         for (auto&& [e, s] : data_) {
             if (e == enum_value) {
@@ -28,7 +29,7 @@ class EnumStringMap {
         throw std::runtime_error("Invalid enum value");
     }
 
-    [[nodiscard]] constexpr auto from_string(std::string_view str) const
+    [[nodiscard]] constexpr auto fromString(std::string_view str) const
         -> Enum {
         for (auto&& [e, s] : data_) {
             if (s == str) {
@@ -53,7 +54,7 @@ auto as_to_vector(GVariant* array_s, const EnumStringMap<T, N>* enum_map =
         while ((item = g_variant_iter_next_value(&str_iter)) != nullptr) {
             const gchar* item_str = g_variant_get_string(item, nullptr);
             if constexpr (std::is_enum_v<T>) {
-                container.emplace_back(enum_map->from_string(item_str));
+                container.emplace_back(enum_map->fromString(item_str));
             } else {
                 container.emplace_back(item_str);
             }
