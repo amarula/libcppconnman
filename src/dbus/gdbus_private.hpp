@@ -2,6 +2,7 @@
 
 #include <glib.h>
 
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -60,6 +61,22 @@ auto as_to_vector(GVariant* array_s, const EnumStringMap<T, N>* enum_map =
         }
     }
     return container;
+}
+
+using VariantPtr = std::unique_ptr<GVariant, decltype(&g_variant_unref)>;
+
+static inline auto vector_to_as(const std::vector<std::string>& vec)
+    -> VariantPtr {
+    GVariantBuilder builder;
+    g_variant_builder_init(&builder, G_VARIANT_TYPE("as"));
+
+    for (const auto& string : vec) {
+        g_variant_builder_add_value(&builder,
+                                    g_variant_new_string(string.c_str()));
+    }
+
+    GVariant* var = g_variant_builder_end(&builder);
+    return VariantPtr{g_variant_ref_sink(var), &g_variant_unref};
 }
 
 }  // namespace Amarula::DBus::G
