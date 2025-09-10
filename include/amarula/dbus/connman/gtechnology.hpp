@@ -28,7 +28,7 @@ struct TechProperties {
     [[nodiscard]] auto isPowered() const { return powered_; }
     [[nodiscard]] auto isConnected() const { return connected_; }
     [[nodiscard]] auto isTethering() const { return tethering_; }
-    [[nodiscard]] auto getTetheringFreq() const { return tetheringFreq_; }
+    [[nodiscard]] auto getTetheringFreq() const { return tethering_freq_; }
     void print() const;
 
    private:
@@ -37,7 +37,7 @@ struct TechProperties {
     bool tethering_ = false;
     std::string name_;
     Type type_;
-    int tetheringFreq_{0};
+    int tethering_freq_{0};
 
     void update(const gchar* key, GVariant* value);
 
