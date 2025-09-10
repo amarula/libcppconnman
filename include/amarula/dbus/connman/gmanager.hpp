@@ -123,6 +123,8 @@ class Manager : public DBusProxy<ManaProperties> {
     void onTechnologiesChanged(OnTechListChangedCallback callback);
     void onServicesChanged(OnServListChangedCallback callback);
 
+    auto internalAgentPath() const -> std::string { return agent_->path_; };
+
    private:
     enum class InputType : std::uint8_t {
         InputUnknown = 0,
@@ -152,8 +154,7 @@ class Manager : public DBusProxy<ManaProperties> {
     OnServicesChangedCallback services_changed_cb_{
         [](const Manager::ProxyList<Service>&) {}};
 
-    explicit Manager(DBus* dbus);
-    void init();
+    explicit Manager(DBus* dbus, const std::string& agent_path = std::string());
 
     using DBusProxy::DBusProxy;
 

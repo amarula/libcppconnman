@@ -40,9 +40,10 @@ void ManaProperties::update(const gchar* key, GVariant* value) {
     }
 }
 
-Manager::Manager(DBus* dbus)
+Manager::Manager(DBus* dbus, const std::string& agent_path)
     : DBusProxy(dbus, SERVICE, MANAGER_PATH, MANAGER_INTERFACE),
-      agent_{std::unique_ptr<Agent>(new Agent(dbus->connection()))} {
+      agent_{
+          std::unique_ptr<Agent>(new Agent(dbus->connection(), agent_path))} {
     setup_agent();
     get_technologies();
     get_services();
@@ -194,8 +195,6 @@ void Manager::setup_agent() {
         return g_variant_builder_end(&builder);
     });
 }
-
-void Manager::init() { registerAgent(agent_->AGENT_PATH); }
 
 void Manager::setOfflineMode(bool offline_mode,
                              PropertiesSetCallback callback) {
