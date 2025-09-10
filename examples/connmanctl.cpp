@@ -77,6 +77,24 @@ auto main() -> int {
                     props.print();
                 }
             }
+        }
+        if (cmd == "agent") {
+            auto on_register = [arg](const auto success) {
+                if (success) {
+                    std::cout << "Agent "
+                              << ((arg == "on") ? "registered" : "unregistered")
+                              << "\n";
+                }
+            };
+            if (arg == "on") {
+                manager->registerAgent(manager->internalAgentPath(),
+                                       on_register);
+            } else if (arg == "off") {
+                manager->unregisterAgent(manager->internalAgentPath(),
+                                         on_register);
+            } else {
+                std::cout << "Usage: agent on/off\n";
+            }
         } else if (cmd == "services") {
             const auto services = manager->services();
             if (services.empty()) {
@@ -222,7 +240,9 @@ auto main() -> int {
                         !connect) {
                     std::cout << (connect ? "Connecting" : "Disconnecting")
                               << " to service: " << name << "\n";
-                    const auto onConnect = [name, connect](bool success) {
+                    const auto on_connect = [name, connect, &connecting,
+                                             &cin_mutex,
+                                             &cin_cv](bool success) {
                         if (success) {
                             std::cout
                                 << "Service " << name
@@ -233,12 +253,17 @@ auto main() -> int {
                                       << (connect ? " connect" : " disconnect")
                                       << " to service " << name << "\n";
                         }
+                        {
+                            const std::unique_lock<std::mutex> lock(cin_mutex);
+                            connecting = false;
+                        }
+                        cin_cv.notify_one();
                     };
                     if (connect) {
-                        (*iterator)->connect(onConnect);
+                        (*iterator)->connect(on_connect);
                         connecting = true;
                     } else {
-                        (*iterator)->disconnect(onConnect);
+                        (*iterator)->disconnect(on_connect);
                     }
                 } else {
                     std::cout << "Service " << name << " is already "
