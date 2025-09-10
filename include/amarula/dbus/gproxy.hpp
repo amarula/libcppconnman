@@ -47,6 +47,40 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
         g_variant_unref(value);
     }
 
+    static void on_properties_changed_cb(
+        GDBusProxy* /*proxy*/, gchar* /*sender_name*/, gchar* /*signal_name*/,
+        GVariant* parameters /*string name, variant value*/,
+        gpointer user_data) {
+        auto self = static_cast<DBusProxy*>(user_data);
+        self->update_property(parameters);
+        if (self->on_property_changed_user_cb_) {
+            std::lock_guard<std::mutex> const lock(self->cb_mtx_);
+            self->on_property_changed_user_cb_(self->props_);
+        }
+    }
+
+    static void get_property_cb(GObject* proxy, GAsyncResult* res,
+                                gpointer user_data) {
+        GError* error = nullptr;
+        GVariant* out_properties = nullptr;
+        std::unique_ptr<CallbackData> data(
+            static_cast<CallbackData*>(user_data));
+        auto self = data->getSelf();
+        const auto counter = data->getCounter();
+        const auto success =
+            finish(G_DBUS_PROXY(proxy), res, &error, &out_properties);
+
+        if (success) {
+            self->updateProperties(out_properties);
+            g_variant_unref(out_properties);
+        } else {
+            std::cerr << error->message << '\n';
+            g_error_free(error);
+        }
+        self->template executeCallBack<PropertiesCallback>(counter,
+                                                           self->props_);
+    }
+
    protected:
     void updateProperties(GVariant* properties) {
         GVariantIter* iter = g_variant_iter_new(properties);
@@ -71,18 +105,6 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
             return true;
         }
         return false;
-    }
-
-    static void on_properties_changed_cb(
-        GDBusProxy* /*proxy*/, gchar* /*sender_name*/, gchar* /*signal_name*/,
-        GVariant* parameters /*string name, variant value*/,
-        gpointer user_data) {
-        auto self = static_cast<DBusProxy*>(user_data);
-        self->update_property(parameters);
-        if (self->on_property_changed_user_cb_) {
-            std::lock_guard<std::mutex> const lock(self->cb_mtx_);
-            self->on_property_changed_user_cb_(self->props_);
-        }
     }
 
    public:
@@ -112,8 +134,8 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
 
     void getProperties(PropertiesCallback callback = nullptr) {
         auto data = prepareCallback(std::move(callback));
-        call_method(proxy_, nullptr, "GetProperties", nullptr,
-                    &DBusProxy::get_property_cb, data.release());
+        callMethod(proxy_, nullptr, "GetProperties", nullptr,
+                   &DBusProxy::get_property_cb, data.release());
     }
 
     void onPropertyChanged(const PropertiesCallback& callback) {
@@ -150,7 +172,7 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
             callbacks_.erase(counter.value());
         }
 
-        dbus_->on_any_async_done();
+        dbus_->onAnyAsyncDone();
     }
 
     explicit DBusProxy(DBus* dbus, const gchar* name, const gchar* obj_path,
@@ -175,7 +197,7 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
     template <typename T>
     auto prepareCallback(T callback) {
         std::lock_guard<std::mutex> const lock(mtx_);
-        dbus_->on_any_async_start();
+        dbus_->onAnyAsyncStart();
         std::optional<size_t> counter{std::nullopt};
         if (callback) {
             size_t index = ++callback_counter_;
@@ -203,31 +225,9 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
         self->template executeCallBack<PropertiesSetCallback>(counter, success);
     }
 
-    static void get_property_cb(GObject* proxy, GAsyncResult* res,
-                                gpointer user_data) {
-        GError* error = nullptr;
-        GVariant* out_properties = nullptr;
-        std::unique_ptr<CallbackData> data(
-            static_cast<CallbackData*>(user_data));
-        auto self = data->getSelf();
-        const auto counter = data->getCounter();
-        const auto success =
-            finish(G_DBUS_PROXY(proxy), res, &error, &out_properties);
-
-        if (success) {
-            self->updateProperties(out_properties);
-            g_variant_unref(out_properties);
-        } else {
-            std::cerr << error->message << '\n';
-            g_error_free(error);
-        }
-        self->template executeCallBack<PropertiesCallback>(counter,
-                                                           self->props_);
-    }
-
-    static void set_property(GDBusProxy* proxy, const gchar* arg_name,
-                             GVariant* arg_value, GCancellable* cancellable,
-                             GAsyncReadyCallback callback, gpointer user_data
+    static void setProperty(GDBusProxy* proxy, const gchar* arg_name,
+                            GVariant* arg_value, GCancellable* cancellable,
+                            GAsyncReadyCallback callback, gpointer user_data
 
     ) {
         std::array<GVariant*, 2> tuple_elements{
@@ -239,9 +239,9 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
                           user_data);
     }
 
-    static void call_method(GDBusProxy* proxy, GCancellable* cancellable,
-                            const gchar* arg_name, GVariant* parameters,
-                            GAsyncReadyCallback callback, gpointer user_data) {
+    static void callMethod(GDBusProxy* proxy, GCancellable* cancellable,
+                           const gchar* arg_name, GVariant* parameters,
+                           GAsyncReadyCallback callback, gpointer user_data) {
         g_dbus_proxy_call(
             proxy, arg_name,
             (parameters != nullptr) ? parameters
