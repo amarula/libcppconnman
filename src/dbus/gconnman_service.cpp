@@ -89,42 +89,42 @@ Service::Service(DBus* dbus, const gchar* obj_path)
 
 void Service::connect(PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    call_method(proxy(), nullptr, CONNECT_STR, nullptr,
-                &Service::finishAsyncCall, data.release());
+    callMethod(proxy(), nullptr, CONNECT_STR, nullptr,
+               &Service::finishAsyncCall, data.release());
 }
 
 void Service::disconnect(PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    call_method(proxy(), nullptr, DISCONNECT_STR, nullptr,
-                &Service::finishAsyncCall, data.release());
+    callMethod(proxy(), nullptr, DISCONNECT_STR, nullptr,
+               &Service::finishAsyncCall, data.release());
 }
 
 void Service::remove(PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    call_method(proxy(), nullptr, REMOVE_STR, nullptr,
-                &Service::finishAsyncCall, data.release());
+    callMethod(proxy(), nullptr, REMOVE_STR, nullptr, &Service::finishAsyncCall,
+               data.release());
 }
 
 void Service::setAutoconnect(const bool autoconnect,
                              PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    set_property(proxy(), AUTOCONNECT_STR,
-                 g_variant_new_boolean(static_cast<gboolean>(autoconnect)),
-                 nullptr, &Service::finishAsyncCall, data.release());
+    setProperty(proxy(), AUTOCONNECT_STR,
+                g_variant_new_boolean(static_cast<gboolean>(autoconnect)),
+                nullptr, &Service::finishAsyncCall, data.release());
 }
 
 void Service::setNameServers(const std::vector<std::string>& name_servers,
                              PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
     auto variant = vector_to_as(name_servers);
-    set_property(proxy(), NAMESERVERS_CONFIGURATION_STR, variant.get(), nullptr,
-                 &Service::finishAsyncCall, data.release());
+    setProperty(proxy(), NAMESERVERS_CONFIGURATION_STR, variant.get(), nullptr,
+                &Service::finishAsyncCall, data.release());
 }
 
 void IPv4::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, METHOD_STR) == 0U) {
         method_ =
-            IPV4_METHOD_MAP.from_string(g_variant_get_string(value, nullptr));
+            IPV4_METHOD_MAP.fromString(g_variant_get_string(value, nullptr));
     } else if (g_strcmp0(key, ADDRESS_STR) == 0U) {
         address_ = g_variant_get_string(value, nullptr);
     } else if (g_strcmp0(key, NETMASK_STR) == 0U) {
@@ -139,14 +139,14 @@ void IPv4::update(const gchar* key, GVariant* value) {
 void IPv6::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, METHOD_STR) == 0U) {
         method_ =
-            IPV6_METHOD_MAP.from_string(g_variant_get_string(value, nullptr));
+            IPV6_METHOD_MAP.fromString(g_variant_get_string(value, nullptr));
     } else if (g_strcmp0(key, ADDRESS_STR) == 0U) {
         address_ = g_variant_get_string(value, nullptr);
     } else if (g_strcmp0(key, GATEWAY_STR) == 0U) {
         gateway_ = g_variant_get_string(value, nullptr);
     } else if (g_strcmp0(key, PRIVACY_STR) == 0U) {
         privacy_ =
-            IPV6_PRIVACY_MAP.from_string(g_variant_get_string(value, nullptr));
+            IPV6_PRIVACY_MAP.fromString(g_variant_get_string(value, nullptr));
     } else if (g_strcmp0(key, PREFIXLENGTH_STR) == 0U) {
         prefix_length_ = static_cast<uint8_t>(g_variant_get_byte(value));
     } else {
@@ -176,7 +176,7 @@ void GVariantParser::parse(GVariant* variant) {
 
 void Ethernet::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, METHOD_STR) == 0U) {
-        method_ = ETHERNET_METHOD_MAP.from_string(
+        method_ = ETHERNET_METHOD_MAP.fromString(
             g_variant_get_string(value, nullptr));
     } else if (g_strcmp0(key, INTERFACE_STR) == 0U) {
         interface_ = g_variant_get_string(value, nullptr);
@@ -206,7 +206,7 @@ void Provider::update(const gchar* key, GVariant* value) {
 void Proxy::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, METHOD_STR) == 0U) {
         method_ =
-            PROXY_METHOD_MAP.from_string(g_variant_get_string(value, nullptr));
+            PROXY_METHOD_MAP.fromString(g_variant_get_string(value, nullptr));
     } else if (g_strcmp0(key, URL_STR) == 0U) {
         url_ = g_variant_get_string(value, nullptr);
     } else if (g_strcmp0(key, SERVERS_STR) == 0U) {
@@ -222,11 +222,11 @@ void ServProperties::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, NAME_STR) == 0) {
         name_ = g_variant_get_string(value, nullptr);
     } else if (g_strcmp0(key, TYPE_STR) == 0U) {
-        type_ = TYPE_MAP.from_string(g_variant_get_string(value, nullptr));
+        type_ = TYPE_MAP.fromString(g_variant_get_string(value, nullptr));
     } else if (g_strcmp0(key, STATE_STR) == 0U) {
-        state_ = STATE_MAP.from_string(g_variant_get_string(value, nullptr));
+        state_ = STATE_MAP.fromString(g_variant_get_string(value, nullptr));
     } else if (g_strcmp0(key, ERROR_STR) == 0U) {
-        error_ = ERROR_MAP.from_string(g_variant_get_string(value, nullptr));
+        error_ = ERROR_MAP.fromString(g_variant_get_string(value, nullptr));
     } else if (g_strcmp0(key, FAVORITE_STR) == 0U) {
         favorite_ = g_variant_get_boolean(value) == 1U;
     } else if (g_strcmp0(key, IMMUTABLE_STR) == 0U) {
@@ -289,13 +289,13 @@ void ServProperties::update(const gchar* key, GVariant* value) {
 
 void ServProperties::print() const {
     std::cout << "@@@@@@@@@@ ServProperties: @@@@@@@@@@@@@@@\n";
-    std::cout << "State: " << STATE_MAP.to_string(state_) << '\n';
+    std::cout << "State: " << STATE_MAP.toString(state_) << '\n';
     if (error_ != Error::None) {
-        std::cout << "Error: " << ERROR_MAP.to_string(error_) << '\n';
+        std::cout << "Error: " << ERROR_MAP.toString(error_) << '\n';
     }
 
     std::cout << "Name: " << name_ << '\n';
-    std::cout << "Type: " << TYPE_MAP.to_string(type_) << '\n';
+    std::cout << "Type: " << TYPE_MAP.toString(type_) << '\n';
     std::cout << "Strength: " << static_cast<int>(strength_) << '\n';
     std::cout << "AutoConnect: " << std::boolalpha << autoconnect_ << '\n';
     std::cout << "mDNS: " << mdns_ << '\n';
@@ -306,7 +306,7 @@ void ServProperties::print() const {
     if (security_) {
         std::cout << "Security: ";
         for (const auto& sec : security_.value()) {
-            std::cout << SECURITY_MAP.to_string(sec) << ' ';
+            std::cout << SECURITY_MAP.toString(sec) << ' ';
         }
         std::cout << '\n';
     }
@@ -351,7 +351,9 @@ void ServProperties::print() const {
         ipv6_.value().print();
     }
 
-    ethernet_.value().print();
+    if (ethernet_) {
+        ethernet_.value().print();
+    }
 
     if (provider_) {
         provider_.value().print();
@@ -366,7 +368,7 @@ void ServProperties::print() const {
 
 void Ethernet::print() const {
     std::cout << "Ethernet:\n";
-    std::cout << "  Method: " << ETHERNET_METHOD_MAP.to_string(method_) << '\n';
+    std::cout << "  Method: " << ETHERNET_METHOD_MAP.toString(method_) << '\n';
     std::cout << "  Interface: " << interface_ << '\n';
     std::cout << "  Address: " << address_ << '\n';
     std::cout << "  MTU: " << mtu_ << '\n';
@@ -374,7 +376,7 @@ void Ethernet::print() const {
 
 void IPv4::print() const {
     std::cout << "IPv4:\n";
-    std::cout << "  Method: " << IPV4_METHOD_MAP.to_string(method_) << '\n';
+    std::cout << "  Method: " << IPV4_METHOD_MAP.toString(method_) << '\n';
     std::cout << "  Address: " << address_ << '\n';
     std::cout << "  Netmask: " << netmask_ << '\n';
     std::cout << "  Gateway: " << gateway_ << '\n';
@@ -390,7 +392,7 @@ void Provider::print() const {
 
 void IPv6::print() const {
     std::cout << "IPv6:\n";
-    std::cout << "  Method: " << IPV6_METHOD_MAP.to_string(method_) << '\n';
+    std::cout << "  Method: " << IPV6_METHOD_MAP.toString(method_) << '\n';
     std::cout << "  Address: " << address_ << '\n';
     std::cout << "  Gateway: " << gateway_ << '\n';
     std::cout << "  Privacy: " << static_cast<int>(privacy_) << '\n';
@@ -400,7 +402,7 @@ void IPv6::print() const {
 
 void Proxy::print() const {
     std::cout << "Proxy:\n";
-    std::cout << "  Method: " << PROXY_METHOD_MAP.to_string(method_) << '\n';
+    std::cout << "  Method: " << PROXY_METHOD_MAP.toString(method_) << '\n';
     std::cout << "  URL: " << url_ << '\n';
     std::cout << "  Servers: ";
     for (const auto& server : servers_) {
