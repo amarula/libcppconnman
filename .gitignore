@@ -3,5 +3,3 @@ build*
 doc
 tags
 CMakeUserPresets.json
-dbus_xml/net.connman/*.h
-dbus_xml/net.connman/*.c
