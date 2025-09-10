@@ -10,14 +10,14 @@
 
 namespace Amarula::DBus::G {
 
-void DBus::on_any_async_done() {
+void DBus::onAnyAsyncDone() {
     std::lock_guard<std::mutex> const lock(mtx_);
     if (pending_calls_-- == 1 && !running_ && loop_ != nullptr) {
         g_main_loop_quit(loop_);
     }
 }
 
-void DBus::on_any_async_start() { ++pending_calls_; }
+void DBus::onAnyAsyncStart() { ++pending_calls_; }
 
 DBus::DBus(const std::string& bus_name, const std::string& object_path) {
     GError* error = nullptr;

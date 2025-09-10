@@ -31,8 +31,8 @@ class DBus {
     virtual ~DBus();
 
     void start();
-    void on_any_async_done();
-    void on_any_async_start();
+    void onAnyAsyncDone();
+    void onAnyAsyncStart();
 
     [[nodiscard]] auto connection() const { return connection_; }
 };
