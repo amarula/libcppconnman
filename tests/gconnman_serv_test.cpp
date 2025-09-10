@@ -53,6 +53,34 @@ TEST(Connman, getServs) {
     ASSERT_TRUE(called) << "TechnologiesChanged callback was never called";
 }
 
+TEST(Connman, setNameServers) {
+    bool called = false;
+    {
+        Connman connman;
+        const auto manager = connman.manager();
+
+        manager->onServicesChanged([&](const auto& services) {
+            called = true;
+            ASSERT_FALSE(services.empty());
+            for (const auto& serv : services) {
+                const auto props = serv->properties();
+                const auto name = props.getName();
+                props.print();
+                serv->onPropertyChanged([](const auto& properties) {
+                    std::cout << "onPropertyChange:\n";
+                    properties.print();
+                });
+                serv->setNameServers(
+                    {"8.8.8.8", "4.4.4.4"}, [&, name](auto success) {
+                        EXPECT_TRUE(success) << "Set setNameServers for "
+                                             << name << " did not succeed";
+                    });
+            }
+        });
+    }
+    ASSERT_TRUE(called) << "TechnologiesChanged callback was never called";
+}
+
 TEST(Connman, ForgetAndDisconnectService) {
     bool called = false;
 
