@@ -34,7 +34,7 @@ void ManaProperties::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, OFFLINEMODE_STR) == 0) {
         offline_mode_ = (g_variant_get_boolean(value) == 1U);
     } else if (g_strcmp0(key, STATE_STR) == 0U) {
-        state_ = STATE_MAP.from_string(g_variant_get_string(value, nullptr));
+        state_ = STATE_MAP.fromString(g_variant_get_string(value, nullptr));
     } else {
         std::cerr << "Unknown property for Manager: " << key << '\n';
     }
@@ -199,9 +199,9 @@ void Manager::setup_agent() {
 void Manager::setOfflineMode(bool offline_mode,
                              PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    set_property(proxy(), OFFLINEMODE_STR,
-                 g_variant_new_boolean(static_cast<gboolean>(offline_mode)),
-                 nullptr, &Manager::finishAsyncCall, data.release());
+    setProperty(proxy(), OFFLINEMODE_STR,
+                g_variant_new_boolean(static_cast<gboolean>(offline_mode)),
+                nullptr, &Manager::finishAsyncCall, data.release());
 }
 
 auto Manager::dict_to_path_prop(GVariant* tuple)
@@ -276,13 +276,13 @@ void Manager::get_proxies_cb(GObject* proxy, GAsyncResult* res,
 }
 
 void Manager::get_technologies() {
-    call_method(proxy(), nullptr, GETTECHNOLOGIES_STR, nullptr,
-                &Manager::get_proxies_cb<Technology>, this);
+    callMethod(proxy(), nullptr, GETTECHNOLOGIES_STR, nullptr,
+               &Manager::get_proxies_cb<Technology>, this);
 }
 
 void Manager::get_services() {
-    call_method(proxy(), nullptr, GETSERVICES_STR, nullptr,
-                &Manager::get_proxies_cb<Service>, this);
+    callMethod(proxy(), nullptr, GETSERVICES_STR, nullptr,
+               &Manager::get_proxies_cb<Service>, this);
 }
 
 void Manager::registerAgent(const std::string& object_path,
@@ -290,8 +290,8 @@ void Manager::registerAgent(const std::string& object_path,
     auto data = prepareCallback(std::move(callback));
     GVariant* child = g_variant_new_object_path(object_path.c_str());
     GVariant* parameters = g_variant_new_tuple(&child, 1);
-    call_method(proxy(), nullptr, REGISTERAGENT_STR, parameters,
-                &Manager::finishAsyncCall, data.release());
+    callMethod(proxy(), nullptr, REGISTERAGENT_STR, parameters,
+               &Manager::finishAsyncCall, data.release());
 }
 
 void Manager::unregisterAgent(const std::string& object_path,
@@ -299,8 +299,8 @@ void Manager::unregisterAgent(const std::string& object_path,
     auto data = prepareCallback(std::move(callback));
     GVariant* child = g_variant_new_object_path(object_path.c_str());
     GVariant* parameters = g_variant_new_tuple(&child, 1);
-    call_method(proxy(), nullptr, UNREGISTERAGENT_STR, parameters,
-                &Manager::finishAsyncCall, data.release());
+    callMethod(proxy(), nullptr, UNREGISTERAGENT_STR, parameters,
+               &Manager::finishAsyncCall, data.release());
 }
 
 void Manager::on_technology_added_removed_cb(GDBusProxy* /*proxy*/,
@@ -409,7 +409,7 @@ auto Manager::parse_fields(GVariant* fields) -> GPtrArray* {
 
         g_variant_iter_init(&inner_iter, inner_dict);
         while (g_variant_iter_next(&inner_iter, "{&s@v}", &prop_name,
-                                   &prop_value_variant)) {
+                                   &prop_value_variant) != 0) {
             auto* prop_value = g_variant_get_variant(prop_value_variant);
             if (g_strcmp0(prop_name, "Type") == 0) {
                 desc->type = g_variant_dup_string(prop_value, nullptr);
