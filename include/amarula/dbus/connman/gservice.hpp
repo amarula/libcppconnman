@@ -214,6 +214,7 @@ struct ServProperties {
     Type type_{};
     std::optional<std::vector<Security>> security_;
     std::optional<std::vector<std::string>> name_servers_;
+    std::optional<std::vector<std::string>> name_servers_conf_;
     std::optional<std::vector<std::string>> domains_;
     std::optional<std::vector<std::string>> time_servers_;
     bool autoconnect_{false};
@@ -245,6 +246,8 @@ class Service : public DBusProxy<ServProperties> {
     void disconnect(PropertiesSetCallback callback = nullptr);
     void remove(PropertiesSetCallback callback = nullptr);
     void setAutoconnect(bool autoconnect,
+                        PropertiesSetCallback callback = nullptr);
+    void setNameServers(const std::vector<std::string>& name_servers,
                         PropertiesSetCallback callback = nullptr);
     friend class Manager;
 };
