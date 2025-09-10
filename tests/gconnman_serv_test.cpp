@@ -16,7 +16,7 @@ using Type = Amarula::DBus::G::Connman::TechProperties::Type;
 TEST(Connman, getServs) {
     bool called = false;
     {
-        Connman connman;
+        const Connman connman;
         const auto manager = connman.manager();
         manager->onTechnologiesChanged([&](const auto& technologies) {
             ASSERT_FALSE(technologies.empty()) << "No technologies returned";
@@ -56,7 +56,7 @@ TEST(Connman, getServs) {
 TEST(Connman, setNameServers) {
     bool called = false;
     {
-        Connman connman;
+        const Connman connman;
         const auto manager = connman.manager();
 
         manager->onServicesChanged([&](const auto& services) {
@@ -85,7 +85,7 @@ TEST(Connman, ForgetAndDisconnectService) {
     bool called = false;
 
     {
-        Connman connman;
+        const Connman connman;
         const auto manager = connman.manager();
 
         manager->onServicesChanged([&](const auto& services) {
@@ -123,7 +123,7 @@ TEST(Connman, ConnectWifi) {
     bool called = false;
     bool called_request_input = false;
     {
-        Connman connman;
+        const Connman connman;
         const auto manager = connman.manager();
 
         manager->onRequestInputPassphrase([&](auto service) -> auto {
@@ -143,17 +143,35 @@ TEST(Connman, ConnectWifi) {
                 const auto props = serv->properties();
                 std::cout << "Service: " << props.getName() << "\n";
                 const auto name = props.getName();
+                const auto state = props.getState();
 
                 if (name == "connmantest") {
                     std::cout << "Test wifi found\n";
-                    std::cout << "Connecting to service: " << name << '\n';
-                    serv->connect([serv](bool success) {
-                        EXPECT_TRUE(success);
-                        std::cout
-                            << "Service connected successfully: " << success
-                            << '\n';
-                        serv->properties().print();
-                    });
+
+                    if (state == State::Idle) {
+                        std::cout << "Connecting to service: " << name << '\n';
+                        props.print();
+                        serv->onPropertyChanged([](const auto& properties) {
+                            std::cout << "onPropertyChange:\n";
+                            properties.print();
+                        });
+                        manager->registerAgent(
+                            manager->internalAgentPath(),
+                            [serv, manager](const auto success) {
+                                EXPECT_TRUE(success);
+                                serv->connect([serv, manager](bool success) {
+                                    EXPECT_TRUE(success);
+                                    std::cout
+                                        << "Service connected successfully: "
+                                        << success << '\n';
+                                    serv->properties().print();
+                                    manager->unregisterAgent(
+                                        manager->internalAgentPath());
+                                });
+                            });
+                    }
+
+                    break;
                 }
             }
         });
