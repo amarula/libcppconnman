@@ -113,6 +113,14 @@ void Service::setAutoconnect(const bool autoconnect,
                  nullptr, &Service::finishAsyncCall, data.release());
 }
 
+void Service::setNameServers(const std::vector<std::string>& name_servers,
+                             PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    auto variant = vector_to_as(name_servers);
+    set_property(proxy(), NAMESERVERS_CONFIGURATION_STR, variant.get(), nullptr,
+                 &Service::finishAsyncCall, data.release());
+}
+
 void IPv4::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, METHOD_STR) == 0U) {
         method_ =
@@ -259,6 +267,11 @@ void ServProperties::update(const gchar* key, GVariant* value) {
             (g_variant_n_children(value) != 0)
                 ? std::optional<std::vector<std::string>>(as_to_vector(value))
                 : std::nullopt;
+    } else if (g_strcmp0(key, NAMESERVERS_CONFIGURATION_STR) == 0U) {
+        name_servers_conf_ =
+            (g_variant_n_children(value) != 0)
+                ? std::optional<std::vector<std::string>>(as_to_vector(value))
+                : std::nullopt;
     } else if (g_strcmp0(key, DOMAINS_STR) == 0U) {
         domains_ =
             (g_variant_n_children(value) != 0)
@@ -301,6 +314,14 @@ void ServProperties::print() const {
     if (name_servers_) {
         std::cout << "Nameservers: ";
         for (const auto& nserver : name_servers_.value()) {
+            std::cout << nserver << ' ';
+        }
+        std::cout << '\n';
+    }
+
+    if (name_servers_conf_) {
+        std::cout << "Nameservers.Configuration: ";
+        for (const auto& nserver : name_servers_conf_.value()) {
             std::cout << nserver << ' ';
         }
         std::cout << '\n';

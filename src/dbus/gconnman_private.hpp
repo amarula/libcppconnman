@@ -61,6 +61,7 @@ constexpr auto DISCONNECT_STR = "Disconnect";
 constexpr auto REMOVE_STR = "Remove";
 constexpr auto INTERFACE_STR = "Interface";
 constexpr auto MTU_STR = "MTU";
+constexpr auto NAMESERVERS_CONFIGURATION_STR = "Nameservers.Configuration";
 
 // Manager interface
 constexpr auto MANAGER_INTERFACE = "net.connman.Manager";
