@@ -50,4 +50,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           clang_tidy_fixes: ${{ runner.temp }}/clang-tidy-fixes.yml
           pull_request_id: ${{ steps.getprv.outputs.prn }}
-          request_changes: false 
+          request_changes: false
