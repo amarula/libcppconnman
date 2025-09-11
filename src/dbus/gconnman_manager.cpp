@@ -34,7 +34,7 @@ void ManaProperties::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, OFFLINEMODE_STR) == 0) {
         offline_mode_ = (g_variant_get_boolean(value) == 1U);
     } else if (g_strcmp0(key, STATE_STR) == 0U) {
-        state_ = STATE_MAP.from_string(g_variant_get_string(value, nullptr));
+        state_ = STATE_MAP.fromString(g_variant_get_string(value, nullptr));
     } else {
         std::cerr << "Unknown property for Manager: " << key << '\n';
     }
