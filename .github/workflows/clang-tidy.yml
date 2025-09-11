@@ -1,0 +1,54 @@
+name: Run clang-tidy on PR
+
+on: [pull_request]
+
+jobs:
+  clang-tidy-ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build doxygen clang-tidy libglib2.0-dev
+
+      - name: Configure, build and test
+        run: cmake --workflow --preset default-develop
+
+      - name: clang-tidy
+        continue-on-error: true
+        run: |
+          # Ensure upstream remote exists and is up to date
+          git remote set-url upstream "https://github.com/${{ github.event.pull_request.base.repo.full_name }}" \
+            || git remote add upstream "https://github.com/${{ github.event.pull_request.base.repo.full_name }}"
+          git fetch --no-tags --no-recurse-submodules --depth=1 upstream "${{ github.event.pull_request.base.ref }}"
+
+          # Prepare directory for clang-tidy fixes
+          mkdir -p ${{ runner.temp }}/clang-tidy-fixes
+
+          # Generate diff from base branch and run clang-tidy
+          BASE_COMMIT=$(git merge-base HEAD "upstream/${{ github.event.pull_request.base.ref }}")
+          git diff -U0 "$BASE_COMMIT" | \
+            clang-tidy-diff -p1 \
+              -path "$(dirname "$COMPILE_COMMANDS")" \
+              -export-fixes "${{ runner.temp }}/clang-tidy-fixes/clang-tidy-fixes.yml"
+
+
+      - name: Export PR variables
+        run: |
+          echo "${{ github.event.number }}" > ${{ runner.temp }}/clang-tidy-fixes/pr_number
+          echo "${{ github.event.pull_request.head.repo.full_name }}" > ${{ runner.temp }}/clang-tidy-fixes/pr-head-repo
+          echo "${{ github.event.pull_request.head.sha }}" > ${{ runner.temp }}/clang-tidy-fixes/pr-head-sha
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-fixes
+          path: |
+            ${{ runner.temp }}/clang-tidy-fixes/*

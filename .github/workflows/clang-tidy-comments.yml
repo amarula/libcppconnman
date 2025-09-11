@@ -1,0 +1,53 @@
+name: Post clang-tidy comments on PR
+
+on:
+  workflow_run:
+    workflows: [clang-tidy-ci]
+    types:
+      - completed
+
+jobs:
+  clang-tidy-comments:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - name: 'Download clang-tidy-fixes'
+        uses: actions/download-artifact@v4
+        with:
+          name: clang-tidy-fixes
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: ${{ runner.temp }}
+
+      - name: Read PR variables
+        id: getprv
+        working-directory: ${{ runner.temp }}
+        run: |
+          echo "prn=$(cat pr_number)" >> $GITHUB_OUTPUT
+          echo "prhr=$(cat pr-head-repo)" >> $GITHUB_OUTPUT
+          echo "prhs=$(cat pr-head-sha)" >> $GITHUB_OUTPUT
+          if [ -f "clang-tidy-fixes.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.getprv.outputs.exists == 'true'
+        with:
+          repository: ${{ steps.getprv.outputs.prhr }}
+          ref: ${{ steps.getprv.outputs.prhs }}
+          persist-credentials: false
+
+      - name: Run clang-tidy-pr-comments
+        if: steps.getprv.outputs.exists == 'true'
+        continue-on-error: true
+        uses: platisd/clang-tidy-pr-comments@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          clang_tidy_fixes: ${{ runner.temp }}/clang-tidy-fixes.yml
+          pull_request_id: ${{ steps.getprv.outputs.prn }}
+          request_changes: false 

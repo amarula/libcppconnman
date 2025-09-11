@@ -17,7 +17,7 @@ class EnumStringMap {
 
     constexpr explicit EnumStringMap(std::array<Pair, N> init) : data_{init} {}
 
-    [[nodiscard]] constexpr auto toString(Enum enum_value) const
+    [[nodiscard]] constexpr auto to_string(Enum enum_value) const
         -> std::string_view {
         for (auto&& [e, s] : data_) {
             if (e == enum_value) {

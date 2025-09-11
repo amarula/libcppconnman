@@ -276,13 +276,13 @@ void ServProperties::update(const gchar* key, GVariant* value) {
 
 void ServProperties::print() const {
     std::cout << "@@@@@@@@@@ ServProperties: @@@@@@@@@@@@@@@\n";
-    std::cout << "State: " << STATE_MAP.toString(state_) << '\n';
+    std::cout << "State: " << STATE_MAP.to_string(state_) << '\n';
     if (error_ != Error::None) {
-        std::cout << "Error: " << ERROR_MAP.toString(error_) << '\n';
+        std::cout << "Error: " << ERROR_MAP.to_string(error_) << '\n';
     }
 
     std::cout << "Name: " << name_ << '\n';
-    std::cout << "Type: " << TYPE_MAP.toString(type_) << '\n';
+    std::cout << "Type: " << TYPE_MAP.to_string(type_) << '\n';
     std::cout << "Strength: " << static_cast<int>(strength_) << '\n';
     std::cout << "AutoConnect: " << std::boolalpha << autoconnect_ << '\n';
     std::cout << "mDNS: " << mdns_ << '\n';
@@ -293,7 +293,7 @@ void ServProperties::print() const {
     if (security_) {
         std::cout << "Security: ";
         for (const auto& sec : security_.value()) {
-            std::cout << SECURITY_MAP.toString(sec) << ' ';
+            std::cout << SECURITY_MAP.to_string(sec) << ' ';
         }
         std::cout << '\n';
     }
@@ -347,7 +347,7 @@ void ServProperties::print() const {
 
 void Ethernet::print() const {
     std::cout << "Ethernet:\n";
-    std::cout << "  Method: " << ETHERNET_METHOD_MAP.toString(method_) << '\n';
+    std::cout << "  Method: " << ETHERNET_METHOD_MAP.to_string(method_) << '\n';
     std::cout << "  Interface: " << interface_ << '\n';
     std::cout << "  Address: " << address_ << '\n';
     std::cout << "  MTU: " << mtu_ << '\n';
@@ -355,7 +355,7 @@ void Ethernet::print() const {
 
 void IPv4::print() const {
     std::cout << "IPv4:\n";
-    std::cout << "  Method: " << IPV4_METHOD_MAP.toString(method_) << '\n';
+    std::cout << "  Method: " << IPV4_METHOD_MAP.to_string(method_) << '\n';
     std::cout << "  Address: " << address_ << '\n';
     std::cout << "  Netmask: " << netmask_ << '\n';
     std::cout << "  Gateway: " << gateway_ << '\n';
@@ -371,7 +371,7 @@ void Provider::print() const {
 
 void IPv6::print() const {
     std::cout << "IPv6:\n";
-    std::cout << "  Method: " << IPV6_METHOD_MAP.toString(method_) << '\n';
+    std::cout << "  Method: " << IPV6_METHOD_MAP.to_string(method_) << '\n';
     std::cout << "  Address: " << address_ << '\n';
     std::cout << "  Gateway: " << gateway_ << '\n';
     std::cout << "  Privacy: " << static_cast<int>(privacy_) << '\n';
@@ -381,7 +381,7 @@ void IPv6::print() const {
 
 void Proxy::print() const {
     std::cout << "Proxy:\n";
-    std::cout << "  Method: " << PROXY_METHOD_MAP.toString(method_) << '\n';
+    std::cout << "  Method: " << PROXY_METHOD_MAP.to_string(method_) << '\n';
     std::cout << "  URL: " << url_ << '\n';
     std::cout << "  Servers: ";
     for (const auto& server : servers_) {

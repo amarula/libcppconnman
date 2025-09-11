@@ -62,7 +62,7 @@ void TechProperties::update(const gchar* key, GVariant* value) {
 void TechProperties::print() const {
     std::cout << "@@@@@@@@@@ TechProperties: @@@@@@@@@@@@@@@\n";
     std::cout << NAME_STR << ": " << name_ << "\n";
-    std::cout << TYPE_STR << ": " << TYPE_MAP.toString(type_) << "\n";
+    std::cout << TYPE_STR << ": " << TYPE_MAP.to_string(type_) << "\n";
     std::cout << POWERED_STR << ": " << std::boolalpha << powered_ << "\n";
     std::cout << CONNECTED_STR << ": " << std::boolalpha << connected_ << "\n";
     std::cout << TETHERING_STR << ": " << std::boolalpha << tethering_ << "\n";
