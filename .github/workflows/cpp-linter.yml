@@ -30,7 +30,7 @@ jobs:
           style: 'file'
           tidy-checks: ''
           files-changed-only: "true"
-          thread-comments: ${{ github.event_name == 'pull_request' }}
+          thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
           file-annotations: "true"
           version: 20
 
