@@ -34,7 +34,7 @@ void ManaProperties::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, OFFLINEMODE_STR) == 0) {
         offline_mode_ = (g_variant_get_boolean(value) == 1U);
     } else if (g_strcmp0(key, STATE_STR) == 0U) {
-        state_ = STATE_MAP.from_string(g_variant_get_string(value, nullptr));
+        state_ = STATE_MAP.fromString(g_variant_get_string(value, nullptr));
     } else {
         std::cerr << "Unknown property for Manager: " << key << '\n';
     }
@@ -62,7 +62,7 @@ void Manager::process_services_changed(
     const std::vector<std::pair<std::string, VariantPtr>>& services_changed) {
     for (const auto& object_path : services_removed) {
         services_.erase(std::remove_if(services_.begin(), services_.end(),
-                                       [&object_path](const auto service) {
+                                       [&object_path](const auto& service) {
                                            return service->objPath() ==
                                                   object_path;
                                        }),
@@ -70,9 +70,10 @@ void Manager::process_services_changed(
     }
     Manager::ProxyList<Service> new_order_of_services;
     for (const auto& [path, prop] : services_changed) {
-        auto service_it = std::find_if(
-            services_.begin(), services_.end(),
-            [&path](const auto service) { return service->objPath() == path; });
+        auto service_it = std::find_if(services_.begin(), services_.end(),
+                                       [&path](const auto& service) {
+                                           return service->objPath() == path;
+                                       });
         if (service_it != services_.end()) {
             new_order_of_services.push_back(*service_it);
             (*service_it)->updateProperties(prop.get());
@@ -95,7 +96,7 @@ void Manager::setup_agent() {
         g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
         auto service_it =
             std::find_if(services_.begin(), services_.end(),
-                         [&service_path](const auto service) {
+                         [&service_path](const auto& service) {
                              return service->objPath() == service_path;
                          });
 
@@ -195,7 +196,7 @@ void Manager::setup_agent() {
     });
 }
 
-void Manager::init() { registerAgent(agent_->AGENT_PATH); }
+void Manager::init() { registerAgent(Agent::AGENT_PATH); }
 
 void Manager::setOfflineMode(bool offline_mode,
                              PropertiesSetCallback callback) {
@@ -410,7 +411,7 @@ auto Manager::parse_fields(GVariant* fields) -> GPtrArray* {
 
         g_variant_iter_init(&inner_iter, inner_dict);
         while (g_variant_iter_next(&inner_iter, "{&s@v}", &prop_name,
-                                   &prop_value_variant)) {
+                                   &prop_value_variant) != 0) {
             auto* prop_value = g_variant_get_variant(prop_value_variant);
             if (g_strcmp0(prop_name, "Type") == 0) {
                 desc->type = g_variant_dup_string(prop_value, nullptr);

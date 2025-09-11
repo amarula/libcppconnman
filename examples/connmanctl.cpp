@@ -19,7 +19,7 @@ auto main() -> int {
     bool connecting = false;
     Connman connman;
     const auto manager = connman.manager();
-    manager->onRequestInputPassphrase([&](auto service) -> auto {
+    manager->onRequestInputPassphrase([&](const auto& service) -> auto {
         const auto name = service->properties().getName();
 
         std::string passphrase;
@@ -222,7 +222,7 @@ auto main() -> int {
                         !connect) {
                     std::cout << (connect ? "Connecting" : "Disconnecting")
                               << " to service: " << name << "\n";
-                    const auto onConnect = [name, connect](bool success) {
+                    const auto on_connect = [name, connect](bool success) {
                         if (success) {
                             std::cout
                                 << "Service " << name
@@ -235,10 +235,10 @@ auto main() -> int {
                         }
                     };
                     if (connect) {
-                        (*iterator)->connect(onConnect);
+                        (*iterator)->connect(on_connect);
                         connecting = true;
                     } else {
-                        (*iterator)->disconnect(onConnect);
+                        (*iterator)->disconnect(on_connect);
                     }
                 } else {
                     std::cout << "Service " << name << " is already "

@@ -98,7 +98,7 @@ TEST(Connman, ConnectWifi) {
         Connman connman;
         const auto manager = connman.manager();
 
-        manager->onRequestInputPassphrase([&](auto service) -> auto {
+        manager->onRequestInputPassphrase([&](const auto& service) -> auto {
             called_request_input = true;
             std::cout << "Requesting input passphrase for service: "
                       << service->properties().getName() << '\n';

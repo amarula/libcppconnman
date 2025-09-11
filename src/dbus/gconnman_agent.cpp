@@ -10,7 +10,7 @@
 #include "gconnman_private.hpp"
 
 namespace Amarula::DBus::G::Connman {
-static constexpr const char *INTROSPECTION_XML =
+static constexpr const char* INTROSPECTION_XML =
     "<node>"
     "  <interface name='net.connman.Agent'>"
     "    <method name='Release'/>"
@@ -27,8 +27,8 @@ static constexpr const char *INTROSPECTION_XML =
     "  </interface>"
     "</node>";
 
-Agent::Agent(GDBusConnection *connection) : connection_{connection} {
-    GError *err = nullptr;
+Agent::Agent(GDBusConnection* connection) : connection_{connection} {
+    GError* err = nullptr;
     node_info_ = g_dbus_node_info_new_for_xml(INTROSPECTION_XML, &err);
     if (node_info_ == nullptr) {
         std::string const msg =
@@ -54,26 +54,26 @@ Agent::~Agent() {
     g_dbus_node_info_unref(node_info_);
 }
 
-void Agent::on_method_call(GDBusConnection * /*connection*/,
-                           const gchar * /*sender*/,
-                           const gchar * /*object_path*/,
-                           const gchar * /*interface_name*/,
-                           const gchar *method_name, GVariant *parameters,
-                           GDBusMethodInvocation *invocation,
+void Agent::on_method_call(GDBusConnection* /*connection*/,
+                           const gchar* /*sender*/,
+                           const gchar* /*object_path*/,
+                           const gchar* /*interface_name*/,
+                           const gchar* method_name, GVariant* parameters,
+                           GDBusMethodInvocation* invocation,
                            gpointer user_data) {
-    auto *self = static_cast<Agent *>(user_data);
+    auto* self = static_cast<Agent*>(user_data);
     self->dispatch_method_call(invocation, method_name, parameters);
 }
 
-void Agent::dispatch_method_call(GDBusMethodInvocation *invocation,
-                                 const gchar *method_name,
-                                 GVariant *parameters) {
+void Agent::dispatch_method_call(GDBusMethodInvocation* invocation,
+                                 const gchar* method_name,
+                                 GVariant* parameters) {
     if (g_strcmp0(method_name, "RequestInput") == 0 && request_input_cb_) {
-        const gchar *service = nullptr;
-        GVariant *fields = nullptr;
+        const gchar* service = nullptr;
+        GVariant* fields = nullptr;
 
-        GVariant *child_service = g_variant_get_child_value(parameters, 0);
-        GVariant *child_fields = g_variant_get_child_value(parameters, 1);
+        GVariant* child_service = g_variant_get_child_value(parameters, 0);
+        GVariant* child_fields = g_variant_get_child_value(parameters, 1);
 
         service = g_variant_get_string(child_service, nullptr);
         fields = g_variant_ref(child_fields);
@@ -81,9 +81,9 @@ void Agent::dispatch_method_call(GDBusMethodInvocation *invocation,
         g_variant_unref(child_service);
         g_variant_unref(child_fields);
 
-        auto *result = request_input_cb_(service, fields);
+        auto* result = request_input_cb_(service, fields);
 
-        GVariant *tuple = g_variant_new_tuple(&result, 1);
+        GVariant* tuple = g_variant_new_tuple(&result, 1);
 
         g_dbus_method_invocation_return_value(invocation, tuple);
         g_variant_unref(fields);
@@ -101,11 +101,11 @@ void Agent::dispatch_method_call(GDBusMethodInvocation *invocation,
     }
 
     if (g_strcmp0(method_name, "ReportError") == 0) {
-        const gchar *service = nullptr;
-        const gchar *error_str = nullptr;
+        const gchar* service = nullptr;
+        const gchar* error_str = nullptr;
 
-        GVariant *child_service = g_variant_get_child_value(parameters, 0);
-        GVariant *child_error = g_variant_get_child_value(parameters, 1);
+        GVariant* child_service = g_variant_get_child_value(parameters, 0);
+        GVariant* child_error = g_variant_get_child_value(parameters, 1);
 
         service = g_variant_get_string(child_service, nullptr);
         error_str = g_variant_get_string(child_error, nullptr);
