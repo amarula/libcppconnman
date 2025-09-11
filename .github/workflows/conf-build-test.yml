@@ -5,8 +5,8 @@ on:
   push:
     tags:
       - 'v*'
-  pull_request:
-    branches: [main, develop]
+  # pull_request:
+  #   branches: [main, develop]
 
 jobs:
   build_test_package:
@@ -128,4 +128,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
