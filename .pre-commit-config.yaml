@@ -1,0 +1,10 @@
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
