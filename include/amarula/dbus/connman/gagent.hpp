@@ -12,11 +12,11 @@ class Connman;
 class Agent {
     GDBusNodeInfo *node_info_;
     guint registration_id_{0};
-    GDBusConnection* connection_{nullptr};
+    GDBusConnection *connection_{nullptr};
     std::string path_{"/net/amarula/gconnman/agent"};
 
-    explicit Agent(GDBusConnection* connection,
-                   const std::string& path = std::string());
+    explicit Agent(GDBusConnection *connection,
+                   const std::string &path = std::string());
 
     using RequestInputCallback =
         std::function<GVariant *(const gchar *service, GVariant *fields)>;
