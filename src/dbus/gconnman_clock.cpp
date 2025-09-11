@@ -59,7 +59,7 @@ void Clock::setTimeZone(const std::string& timezone,
                         PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
     set_property(proxy(), TIMEZONE_STR, g_variant_new_string(timezone.c_str()),
-                 nullptr, &Clock::finishAsyncCall, data.release());
+                 NULL, &Clock::finishAsyncCall, data.release());
 }
 
 void Clock::setTimeUpdates(const Properties::TimeUpdate time_updates,
