@@ -25,6 +25,8 @@ jobs:
       - name: clang-tidy
         continue-on-error: true
         run: |
+          pip3 install pyyaml
+
           # Ensure upstream remote exists and is up to date
           git remote add upstream "https://github.com/${{ github.event.pull_request.base.repo.full_name }}"
           git fetch --no-tags --no-recurse-submodules upstream "${{ github.event.pull_request.base.ref }}"
