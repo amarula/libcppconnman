@@ -1,8 +1,8 @@
-# gdbus-cpp  
+# gdbus-cpp
 
 [TOC]
 
-This repository should provide easy to use C++ API to communicate with the DBus using GDBus. 
+This repository should provide easy to use C++ API to communicate with the DBus using GDBus.
 
 ## Configure, build, test, package ...
 
@@ -15,9 +15,9 @@ Refer to [cmake](https://cmake.org/cmake/help/latest/manual/cmake.1.html), [ctes
 ```CMake
 include(FetchContent)
 FetchContent_Declare(
-	GDbusCpp	
-	GIT_REPOSITORY https://github.com/amarula/libcppconnman.git 
-	GIT_TAG vMAJOR.MINOR.PATCH 
+	GDbusCpp
+	GIT_REPOSITORY https://github.com/amarula/libcppconnman.git
+	GIT_TAG vMAJOR.MINOR.PATCH
 	FIND_PACKAGE_ARGS MAJOR.MINOR CONFIG
 	)
 FetchContent_MakeAvailable(GDbusCpp)
@@ -31,4 +31,3 @@ You can read the [API reference](https://amarula.github.io/libcppconnman/), or g
 ```
 cmake --workflow --preset default-documentation
 ```
-

@@ -165,5 +165,3 @@ function( version_from_git )
   set( VERSION_PATCH ${version_patch} PARENT_SCOPE )
 
 endfunction( version_from_git )
-
-
