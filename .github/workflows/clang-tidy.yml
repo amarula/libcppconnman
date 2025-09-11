@@ -26,9 +26,8 @@ jobs:
         continue-on-error: true
         run: |
           # Ensure upstream remote exists and is up to date
-          git remote set-url upstream "https://github.com/${{ github.event.pull_request.base.repo.full_name }}" \
-            || git remote add upstream "https://github.com/${{ github.event.pull_request.base.repo.full_name }}"
-          git fetch --no-tags --no-recurse-submodules --depth=1 upstream "${{ github.event.pull_request.base.ref }}"
+          git remote add upstream "https://github.com/${{ github.event.pull_request.base.repo.full_name }}"
+          git fetch --no-tags --no-recurse-submodules upstream "${{ github.event.pull_request.base.ref }}"
 
           # Prepare directory for clang-tidy fixes
           mkdir -p ${{ runner.temp }}/clang-tidy-fixes
@@ -37,7 +36,7 @@ jobs:
           BASE_COMMIT=$(git merge-base HEAD "upstream/${{ github.event.pull_request.base.ref }}")
           git diff -U0 "$BASE_COMMIT" | \
             clang-tidy-diff -p1 \
-              -path "$(dirname "$COMPILE_COMMANDS")" \
+              -path "build/default-develop" \
               -export-fixes "${{ runner.temp }}/clang-tidy-fixes/clang-tidy-fixes.yml"
 
 
