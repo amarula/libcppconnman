@@ -1,4 +1,5 @@
-name: Run clang-tidy on PR
+name: clang-tidy-ci
+run-name: Run clang-tidy on PR
 
 on: [pull_request]
 

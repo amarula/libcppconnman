@@ -1,4 +1,5 @@
-name: Post clang-tidy comments on PR
+name: clang-tidy-comments
+run-name: Post clang-tidy comments on PR
 
 on:
   workflow_run:
