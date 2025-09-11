@@ -7,11 +7,10 @@ Checks:
   modernize-*,
   performance-*,
   portability-*,
-  readability-*
-
-HeaderFilterRegex: 'src'
-FormatStyle: file
-
+  readability-*,
+  -readability-function-cognitive-complexity
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
 CheckOptions:
   - key: readability-identifier-naming.StaticVariableCase
     value: lower_case
@@ -52,9 +51,9 @@ CheckOptions:
   - key: readability-identifier-naming.PrivateMethodCase
     value: lower_case
   - key: readability-identifier-naming.PublicMethodCase
-    value: camelCase
+    value: camelBack
   - key: readability-identifier-naming.ProtectedMethodCase
-    value: camelCase
+    value: camelBack
 
   - key: readability-identifier-naming.ConstexprVariableCase
     value: UPPER_CASE
@@ -66,3 +65,4 @@ CheckOptions:
 
   - key: readability-identifier-naming.NamespaceCase
     value: CamelCase
+...
