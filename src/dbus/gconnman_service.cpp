@@ -1,9 +1,9 @@
-
 #include <glib.h>
 
 #include <amarula/dbus/connman/gservice.hpp>
 #include <amarula/dbus/gdbus.hpp>
 #include <amarula/dbus/gproxy.hpp>
+#include <amarula/log.hpp>
 #include <cstdint>
 #include <iostream>
 #include <optional>
@@ -132,7 +132,7 @@ void IPv4::update(const gchar* key, GVariant* value) {
     } else if (g_strcmp0(key, GATEWAY_STR) == 0U) {
         gateway_ = g_variant_get_string(value, nullptr);
     } else {
-        std::cerr << "Unknown property for IPv4: " << key << '\n';
+        LCM_LOG("Unknown property for IPv4: " << key << '\n');
     }
 }
 
@@ -150,7 +150,7 @@ void IPv6::update(const gchar* key, GVariant* value) {
     } else if (g_strcmp0(key, PREFIXLENGTH_STR) == 0U) {
         prefix_length_ = static_cast<uint8_t>(g_variant_get_byte(value));
     } else {
-        std::cerr << "Unknown property for IPv6: " << key << '\n';
+        LCM_LOG("Unknown property for IPv6: " << key << '\n');
     }
 }
 
@@ -185,7 +185,7 @@ void Ethernet::update(const gchar* key, GVariant* value) {
     } else if (g_strcmp0(key, MTU_STR) == 0U) {
         mtu_ = static_cast<uint16_t>(g_variant_get_uint16(value));
     } else {
-        std::cerr << "Unknown property for Ethernet: " << key << '\n';
+        LCM_LOG("Unknown property for Ethernet: " << key << '\n');
     }
 }
 
@@ -199,7 +199,7 @@ void Provider::update(const gchar* key, GVariant* value) {
     } else if (g_strcmp0(key, TYPE_STR) == 0U) {
         type_ = g_variant_get_string(value, nullptr);
     } else {
-        std::cerr << "Unknown property for Provider: " << key << '\n';
+        LCM_LOG("Unknown property for Provider: " << key << '\n');
     }
 }
 
@@ -214,7 +214,7 @@ void Proxy::update(const gchar* key, GVariant* value) {
     } else if (g_strcmp0(key, EXCLUDES_STR) == 0U) {
         excludes_ = as_to_vector(value);
     } else {
-        std::cerr << "Unknown property for Proxy: " << key << '\n';
+        LCM_LOG("Unknown property for Proxy: " << key << '\n');
     }
 }
 
@@ -283,64 +283,64 @@ void ServProperties::update(const gchar* key, GVariant* value) {
                 ? std::optional<std::vector<std::string>>(as_to_vector(value))
                 : std::nullopt;
     } else {
-        std::cerr << "Unknown or empty property for Service: " << key << '\n';
+        LCM_LOG("Unknown or empty property for Service: " << key << '\n');
     }
 }
 
 void ServProperties::print() const {
-    std::cout << "@@@@@@@@@@ ServProperties: @@@@@@@@@@@@@@@\n";
-    std::cout << "State: " << STATE_MAP.toString(state_) << '\n';
+    LCM_LOG("@@@@@@@@@@ ServProperties: @@@@@@@@@@@@@@@\n");
+    LCM_LOG("State: " << STATE_MAP.toString(state_) << '\n');
     if (error_ != Error::None) {
-        std::cout << "Error: " << ERROR_MAP.toString(error_) << '\n';
+        LCM_LOG("Error: " << ERROR_MAP.toString(error_) << '\n');
     }
 
-    std::cout << "Name: " << name_ << '\n';
-    std::cout << "Type: " << TYPE_MAP.toString(type_) << '\n';
-    std::cout << "Strength: " << static_cast<int>(strength_) << '\n';
-    std::cout << "AutoConnect: " << std::boolalpha << autoconnect_ << '\n';
-    std::cout << "mDNS: " << mdns_ << '\n';
-    std::cout << "Favorite: " << favorite_ << '\n';
-    std::cout << "Immutable: " << immutable_ << '\n';
-    std::cout << "Roaming: " << roaming_ << '\n';
+    LCM_LOG("Name: " << name_ << '\n');
+    LCM_LOG("Type: " << TYPE_MAP.toString(type_) << '\n');
+    LCM_LOG("Strength: " << static_cast<int>(strength_) << '\n');
+    LCM_LOG("AutoConnect: " << std::boolalpha << autoconnect_ << '\n');
+    LCM_LOG("mDNS: " << mdns_ << '\n');
+    LCM_LOG("Favorite: " << favorite_ << '\n');
+    LCM_LOG("Immutable: " << immutable_ << '\n');
+    LCM_LOG("Roaming: " << roaming_ << '\n');
 
     if (security_) {
-        std::cout << "Security: ";
+        LCM_LOG("Security: ");
         for (const auto& sec : security_.value()) {
-            std::cout << SECURITY_MAP.toString(sec) << ' ';
+            LCM_LOG(SECURITY_MAP.toString(sec) << ' ');
         }
-        std::cout << '\n';
+        LCM_LOG('\n');
     }
 
     if (name_servers_) {
-        std::cout << "Nameservers: ";
+        LCM_LOG("Nameservers: ");
         for (const auto& nserver : name_servers_.value()) {
-            std::cout << nserver << ' ';
+            LCM_LOG(nserver << ' ');
         }
-        std::cout << '\n';
+        LCM_LOG('\n');
     }
 
     if (name_servers_conf_) {
-        std::cout << "Nameservers.Configuration: ";
+        LCM_LOG("Nameservers.Configuration: ");
         for (const auto& nserver : name_servers_conf_.value()) {
-            std::cout << nserver << ' ';
+            LCM_LOG(nserver << ' ');
         }
-        std::cout << '\n';
+        LCM_LOG('\n');
     }
 
     if (domains_) {
-        std::cout << "Domains: ";
+        LCM_LOG("Domains: ");
         for (const auto& domain : domains_.value()) {
-            std::cout << domain << ' ';
+            LCM_LOG(domain << ' ');
         }
-        std::cout << '\n';
+        LCM_LOG('\n');
     }
 
     if (time_servers_) {
-        std::cout << "TimeServers: ";
+        LCM_LOG("TimeServers: ");
         for (const auto& tserver : time_servers_.value()) {
-            std::cout << tserver << ' ';
+            LCM_LOG(tserver << ' ');
         }
-        std::cout << '\n';
+        LCM_LOG('\n');
     }
 
     if (ipv4_) {
@@ -363,57 +363,56 @@ void ServProperties::print() const {
         proxy_.value().print();
     }
 
-    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
+    LCM_LOG("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 }
 
 void Ethernet::print() const {
-    std::cout << "Ethernet:\n";
-    std::cout << "  Method: " << ETHERNET_METHOD_MAP.toString(method_) << '\n';
-    std::cout << "  Interface: " << interface_ << '\n';
-    std::cout << "  Address: " << address_ << '\n';
-    std::cout << "  MTU: " << mtu_ << '\n';
+    LCM_LOG("Ethernet:\n");
+    LCM_LOG("  Method: " << ETHERNET_METHOD_MAP.toString(method_) << '\n');
+    LCM_LOG("  Interface: " << interface_ << '\n');
+    LCM_LOG("  Address: " << address_ << '\n');
+    LCM_LOG("  MTU: " << mtu_ << '\n');
 }
 
 void IPv4::print() const {
-    std::cout << "IPv4:\n";
-    std::cout << "  Method: " << IPV4_METHOD_MAP.toString(method_) << '\n';
-    std::cout << "  Address: " << address_ << '\n';
-    std::cout << "  Netmask: " << netmask_ << '\n';
-    std::cout << "  Gateway: " << gateway_ << '\n';
+    LCM_LOG("IPv4:\n");
+    LCM_LOG("  Method: " << IPV4_METHOD_MAP.toString(method_) << '\n');
+    LCM_LOG("  Address: " << address_ << '\n');
+    LCM_LOG("  Netmask: " << netmask_ << '\n');
+    LCM_LOG("  Gateway: " << gateway_ << '\n');
 }
 
 void Provider::print() const {
-    std::cout << "Provider:\n";
-    std::cout << "  Host: " << host_ << '\n';
-    std::cout << "  Domain: " << domain_ << '\n';
-    std::cout << "  Name: " << name_ << '\n';
-    std::cout << "  Type: " << type_ << '\n';
+    LCM_LOG("Provider:\n");
+    LCM_LOG("  Host: " << host_ << '\n');
+    LCM_LOG("  Domain: " << domain_ << '\n');
+    LCM_LOG("  Name: " << name_ << '\n');
+    LCM_LOG("  Type: " << type_ << '\n');
 }
 
 void IPv6::print() const {
-    std::cout << "IPv6:\n";
-    std::cout << "  Method: " << IPV6_METHOD_MAP.toString(method_) << '\n';
-    std::cout << "  Address: " << address_ << '\n';
-    std::cout << "  Gateway: " << gateway_ << '\n';
-    std::cout << "  Privacy: " << static_cast<int>(privacy_) << '\n';
-    std::cout << "  Prefix Length: " << static_cast<int>(prefix_length_)
-              << '\n';
+    LCM_LOG("IPv6:\n");
+    LCM_LOG("  Method: " << IPV6_METHOD_MAP.toString(method_) << '\n');
+    LCM_LOG("  Address: " << address_ << '\n');
+    LCM_LOG("  Gateway: " << gateway_ << '\n');
+    LCM_LOG("  Privacy: " << static_cast<int>(privacy_) << '\n');
+    LCM_LOG("  Prefix Length: " << static_cast<int>(prefix_length_) << '\n');
 }
 
 void Proxy::print() const {
-    std::cout << "Proxy:\n";
-    std::cout << "  Method: " << PROXY_METHOD_MAP.toString(method_) << '\n';
-    std::cout << "  URL: " << url_ << '\n';
-    std::cout << "  Servers: ";
+    LCM_LOG("Proxy:\n");
+    LCM_LOG("  Method: " << PROXY_METHOD_MAP.toString(method_) << '\n');
+    LCM_LOG("  URL: " << url_ << '\n');
+    LCM_LOG("  Servers: ");
     for (const auto& server : servers_) {
-        std::cout << server << ' ';
+        LCM_LOG(server << ' ');
     }
-    std::cout << '\n';
+    LCM_LOG('\n');
 
-    std::cout << "  Excludes: ";
+    LCM_LOG("  Excludes: ");
     for (const auto& exclude : excludes_) {
-        std::cout << exclude << ' ';
+        LCM_LOG(exclude << ' ');
     }
-    std::cout << '\n';
+    LCM_LOG('\n');
 }
 }  // namespace Amarula::DBus::G::Connman

@@ -3,6 +3,7 @@
 #include <amarula/dbus/connman/gclock.hpp>
 #include <amarula/dbus/gdbus.hpp>
 #include <amarula/dbus/gproxy.hpp>
+#include <amarula/log.hpp>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
@@ -42,7 +43,7 @@ void ClockProperties::update(const gchar* key, GVariant* value) {
     } else if (g_strcmp0(key, TIMESERVERSYNCED_STR) == 0U) {
         time_server_synced_ = g_variant_get_boolean(value) == 1U;
     } else {
-        std::cerr << "Unknown property for Clock: " << key << '\n';
+        LCM_LOG("Unknown property for Clock: " << key << '\n');
     }
 }
 
@@ -97,24 +98,25 @@ void Clock::setTimeServers(const std::vector<std::string>& servers,
 }
 
 void ClockProperties::print() const {
-    std::cout << "@@@@@@@@@@ ClockProperties: @@@@@@@@@@@@@@@\n";
-    std::cout << TIME_STR << ": " << time_ << " (";
+    LCM_LOG("@@@@@@@@@@ ClockProperties: @@@@@@@@@@@@@@@\n");
+    LCM_LOG(TIME_STR << ": " << time_ << " (");
     const auto time_value = static_cast<std::time_t>(time_);
-    std::cout << std::put_time(std::localtime(&time_value), "%Y-%m-%d %H:%M:%S")
-              << ")\n";
-    std::cout << TIMEUPDATES_STR << ": "
-              << TIME_UPDATE_MAP.toString(time_updates_) << '\n';
-    std::cout << TIMEZONE_STR << ": " << timezone_ << '\n';
-    std::cout << TIMEZONEUPDATES_STR << ": "
-              << TIME_ZONE_UPDATE_MAP.toString(timezone_updates_) << '\n';
-    std::cout << TIMESERVERSYNCED_STR << ": " << std::boolalpha
-              << time_server_synced_ << '\n';
-    std::cout << TIMESERVERS_STR << ": ";
+    LCM_LOG(std::put_time(std::localtime(&time_value), "%Y-%m-%d %H:%M:%S")
+            << ")\n");
+    LCM_LOG(TIMEUPDATES_STR << ": " << TIME_UPDATE_MAP.toString(time_updates_)
+                            << '\n');
+    LCM_LOG(TIMEZONE_STR << ": " << timezone_ << '\n');
+    LCM_LOG(TIMEZONEUPDATES_STR
+            << ": " << TIME_ZONE_UPDATE_MAP.toString(timezone_updates_)
+            << '\n');
+    LCM_LOG(TIMESERVERSYNCED_STR << ": " << std::boolalpha
+                                 << time_server_synced_ << '\n');
+    LCM_LOG(TIMESERVERS_STR << ": ");
     for (const auto& server : time_servers_) {
-        std::cout << server << ' ';
+        LCM_LOG(server << ' ');
     }
-    std::cout << '\n';
-    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
+    LCM_LOG('\n');
+    LCM_LOG("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 }
 
 }  // namespace Amarula::DBus::G::Connman

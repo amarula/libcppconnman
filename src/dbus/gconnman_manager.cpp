@@ -11,6 +11,7 @@
 #include <amarula/dbus/connman/gtechnology.hpp>
 #include <amarula/dbus/gdbus.hpp>
 #include <amarula/dbus/gproxy.hpp>
+#include <amarula/log.hpp>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -36,7 +37,7 @@ void ManaProperties::update(const gchar* key, GVariant* value) {
     } else if (g_strcmp0(key, STATE_STR) == 0U) {
         state_ = STATE_MAP.fromString(g_variant_get_string(value, nullptr));
     } else {
-        std::cerr << "Unknown property for Manager: " << key << '\n';
+        LCM_LOG("Unknown property for Manager: " << key << '\n');
     }
 }
 
@@ -270,7 +271,7 @@ void Manager::get_proxies_cb(GObject* proxy, GAsyncResult* res,
         }
 
     } else {
-        std::cerr << error->message << '\n';
+        LCM_LOG(error->message << '\n');
         g_error_free(error);
     }
 }
