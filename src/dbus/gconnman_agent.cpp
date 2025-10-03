@@ -3,6 +3,7 @@
 #include <glib.h>
 
 #include <amarula/dbus/connman/gagent.hpp>
+#include <amarula/log.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -114,7 +115,7 @@ void Agent::dispatch_method_call(GDBusMethodInvocation *invocation,
         service = g_variant_get_string(child_service, nullptr);
         error_str = g_variant_get_string(child_error, nullptr);
 
-        std::cerr << "ReportError:" << service << " " << error_str << "\n";
+        LCM_LOG("ReportError:" << service << " " << error_str << '\n');
 
         g_variant_unref(child_service);
         g_variant_unref(child_error);

@@ -5,6 +5,7 @@
 #include <glib.h>
 
 #include <amarula/dbus/gdbus.hpp>
+#include <amarula/log.hpp>
 #include <any>
 #include <array>
 #include <cstddef>
@@ -74,7 +75,7 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
             self->updateProperties(out_properties);
             g_variant_unref(out_properties);
         } else {
-            std::cerr << error->message << '\n';
+            LCM_LOG(error->message << '\n');
             g_error_free(error);
         }
         self->template executeCallBack<PropertiesCallback>(counter,
@@ -214,7 +215,7 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
 
         const auto success = finish(G_DBUS_PROXY(proxy), res, &error);
         if (!success) {
-            std::cerr << error->message << '\n';
+            LCM_LOG(error->message << '\n');
             g_error_free(error);
         }
 

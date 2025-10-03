@@ -4,6 +4,7 @@
 #include <amarula/dbus/connman/gtechnology.hpp>
 #include <amarula/dbus/gdbus.hpp>
 #include <amarula/dbus/gproxy.hpp>
+#include <amarula/log.hpp>
 #include <iostream>
 #include <utility>
 
@@ -55,19 +56,19 @@ void TechProperties::update(const gchar* key, GVariant* value) {
     } else if (g_strcmp0(key, TETHERINGFREQ_STR) == 0U) {
         tethering_freq_ = g_variant_get_int32(value);
     } else {
-        std::cerr << "Unknown property for Technology: " << key << '\n';
+        LCM_LOG("Unknown property for Technology: " << key << '\n');
     }
 }
 
 void TechProperties::print() const {
-    std::cout << "@@@@@@@@@@ TechProperties: @@@@@@@@@@@@@@@\n";
-    std::cout << NAME_STR << ": " << name_ << "\n";
-    std::cout << TYPE_STR << ": " << TYPE_MAP.toString(type_) << "\n";
-    std::cout << POWERED_STR << ": " << std::boolalpha << powered_ << "\n";
-    std::cout << CONNECTED_STR << ": " << std::boolalpha << connected_ << "\n";
-    std::cout << TETHERING_STR << ": " << std::boolalpha << tethering_ << "\n";
-    std::cout << TETHERINGFREQ_STR << ": " << tethering_freq_ << " \n";
-    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
+    LCM_LOG("@@@@@@@@@@ TechProperties: @@@@@@@@@@@@@@@\n");
+    LCM_LOG(NAME_STR << ": " << name_ << '\n');
+    LCM_LOG(TYPE_STR << ": " << TYPE_MAP.toString(type_) << '\n');
+    LCM_LOG(POWERED_STR << ": " << std::boolalpha << powered_ << '\n');
+    LCM_LOG(CONNECTED_STR << ": " << std::boolalpha << connected_ << '\n');
+    LCM_LOG(TETHERING_STR << ": " << std::boolalpha << tethering_ << '\n');
+    LCM_LOG(TETHERINGFREQ_STR << ": " << tethering_freq_ << " \n");
+    LCM_LOG("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 }
 
 }  // namespace Amarula::DBus::G::Connman
