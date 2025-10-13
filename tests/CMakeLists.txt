@@ -5,6 +5,7 @@ FetchContent_Declare(
   GIT_TAG v1.16.0)
 set(INSTALL_GTEST OFF)
 set(BUILD_GMOCK OFF)
+set(BUILD_SHARED_LIBS OFF)
 FetchContent_MakeAvailable(googletest)
 include(GoogleTest)
 
