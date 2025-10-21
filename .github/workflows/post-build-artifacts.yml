@@ -1,0 +1,49 @@
+name: Lint and Comment on PR
+
+on:
+  workflow_run:
+    workflows: [push-build-test-lint-release]
+    types:
+      - completed
+
+jobs:
+  comment:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+
+    steps:
+      - name: 'Download common artifact'
+        uses: actions/download-artifact@v4
+        with:
+          name: common
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: ${{ runner.temp }}
+
+      - name: Build PR comment
+        id: build_comment
+        working-directory: ${{ runner.temp }}
+        run: |
+          echo "🧩 Build Artifacts" > comment.md
+          echo "" >> comment.md
+          echo "✅ The following build artifacts were produced:" >> comment.md
+          echo "" >> comment.md
+          url=$(cat artifact_url.txt)
+          echo "- [**${{ runner.name }}**](${url})" >> comment.md
+          echo "" >> comment.md
+
+      - name: Read PR variables
+        id: getprv
+        working-directory: ${{ runner.temp }}
+        run: |
+          echo "prn=$(cat pr_number)" >> $GITHUB_OUTPUT
+
+      - name: Post or update PR comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ steps.getprv.outputs.prn }}
+          body-path: ${{ runner.temp }}/comment.md
