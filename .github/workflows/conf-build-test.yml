@@ -64,10 +64,14 @@ jobs:
           echo "${{ github.event.pull_request.head.sha }}" > ${{ runner.temp }}/common/pr-head-sha
 
       - name: Upload linux artifact
+        id: upload_build
         uses: actions/upload-artifact@v4
         with:
           name: linux
           path: build/default-develop/packages-default-develop/*
+
+      - name: Save artifact URL to file
+        run: echo "${{ steps.upload_build.outputs.artifact-url }}" > ${{ runner.temp }}/common/artifact_url.txt
 
       - name: Upload common artifact
         uses: actions/upload-artifact@v4
