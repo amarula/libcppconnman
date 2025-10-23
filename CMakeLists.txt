@@ -22,6 +22,8 @@ include(GNUInstallDirs)
 set(DBUS_HEADERS include/amarula/dbus/gdbus.hpp include/amarula/dbus/gproxy.hpp)
 
 add_library(GDbusProxy ${DBUS_HEADERS} src/dbus/gdbus.cpp)
+set_target_properties(GDbusProxy PROPERTIES VERSION ${PROJECT_VERSION}
+                                            SOVERSION ${PROJECT_VERSION_MAJOR})
 add_library(Amarula::GDbusProxy ALIAS GDbusProxy)
 target_include_directories(
   GDbusProxy PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -57,7 +59,9 @@ if(BUILD_CONNMAN)
     include/amarula/dbus/connman/gagent.hpp
     src/dbus/gconnman_agent.cpp
     src/dbus/gdbus_private.hpp)
-
+  set_target_properties(
+    GConnmanDbus PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION
+                                                       ${PROJECT_VERSION_MAJOR})
   add_library(Amarula::GConnmanDbus ALIAS GConnmanDbus)
 
   target_include_directories(
