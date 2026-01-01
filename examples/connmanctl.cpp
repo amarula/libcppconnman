@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
+#include <ranges>
 #include <sstream>
 #include <string>
 
@@ -19,7 +20,7 @@ auto main() -> int {
     bool connecting = false;
     Connman connman;
     const auto manager = connman.manager();
-    manager->onRequestInputPassphrase([&](auto service) -> auto {
+    manager->onRequestInputPassphrase([&](const auto& service) -> auto {
         const auto name = service->properties().getName();
 
         std::string passphrase;
@@ -46,14 +47,13 @@ auto main() -> int {
             }
         }
         // Trim whitespace
-        line.erase(line.begin(),
-                   std::find_if(line.begin(), line.end(), [](int character) {
+        line.erase(line.begin(), std::ranges::find_if(line, [](int character) {
                        return std::isspace(character) == 0;
                    }));
-        line.erase(std::find_if(line.rbegin(), line.rend(),
-                                [](int character) {
-                                    return std::isspace(character) == 0;
-                                })
+        line.erase(std::ranges::find_if(std::ranges::reverse_view(line),
+                                        [](int character) {
+                                            return std::isspace(character) == 0;
+                                        })
                        .base(),
                    line.end());
 
@@ -118,9 +118,8 @@ auto main() -> int {
                                   << service->objPath() << "\n";
                     }
                 } else {
-                    auto iterator = std::find_if(
-                        services.begin(), services.end(),
-                        [&arg](const auto& service) {
+                    auto iterator = std::ranges::find_if(
+                        services, [&arg](const auto& service) {
                             return service->objPath() == arg ||
                                    service->properties().getName() == arg;
                         });
@@ -225,8 +224,8 @@ auto main() -> int {
             }
             const bool connect = (cmd == "connect");
             const auto services = manager->services();
-            auto iterator = std::find_if(
-                services.begin(), services.end(), [&arg](const auto& service) {
+            auto iterator =
+                std::ranges::find_if(services, [&arg](const auto& service) {
                     return service->objPath() == arg ||
                            service->properties().getName() == arg;
                 });
@@ -279,8 +278,8 @@ auto main() -> int {
                 continue;
             }
             const auto services = manager->services();
-            auto iterator = std::find_if(
-                services.begin(), services.end(), [&arg](const auto& service) {
+            auto iterator =
+                std::ranges::find_if(services, [&arg](const auto& service) {
                     return service->objPath() == arg ||
                            service->properties().getName() == arg;
                 });

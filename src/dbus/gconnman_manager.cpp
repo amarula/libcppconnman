@@ -12,9 +12,9 @@
 #include <amarula/dbus/gdbus.hpp>
 #include <amarula/dbus/gproxy.hpp>
 #include <amarula/log.hpp>
-#include <iostream>
 #include <memory>
 #include <mutex>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
@@ -95,11 +95,10 @@ void Manager::setup_agent() {
         std::lock_guard<std::mutex> const lock(mtx_);
         GVariantBuilder builder;
         g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
-        auto service_it =
-            std::find_if(services_.begin(), services_.end(),
-                         [&service_path](const auto service) {
-                             return service->objPath() == service_path;
-                         });
+        auto service_it = std::ranges::find_if(
+            services_, [&service_path](const auto& service) {
+                return service->objPath() == service_path;
+            });
 
         if (service_it != services_.end()) {
             auto* parsed_fields = parse_fields(fields);
