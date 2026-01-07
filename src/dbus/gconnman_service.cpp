@@ -89,26 +89,26 @@ Service::Service(DBus* dbus, const gchar* obj_path)
 
 void Service::connect(PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    callMethod(proxy(), nullptr, CONNECT_STR, nullptr,
-               &Service::finishAsyncCall, data.release());
+    callMethod(nullptr, CONNECT_STR, nullptr, &Service::finishAsyncCall,
+               data.release());
 }
 
 void Service::disconnect(PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    callMethod(proxy(), nullptr, DISCONNECT_STR, nullptr,
-               &Service::finishAsyncCall, data.release());
+    callMethod(nullptr, DISCONNECT_STR, nullptr, &Service::finishAsyncCall,
+               data.release());
 }
 
 void Service::remove(PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    callMethod(proxy(), nullptr, REMOVE_STR, nullptr, &Service::finishAsyncCall,
+    callMethod(nullptr, REMOVE_STR, nullptr, &Service::finishAsyncCall,
                data.release());
 }
 
 void Service::setAutoconnect(const bool autoconnect,
                              PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    setProperty(proxy(), AUTOCONNECT_STR,
+    setProperty(AUTOCONNECT_STR,
                 g_variant_new_boolean(static_cast<gboolean>(autoconnect)),
                 nullptr, &Service::finishAsyncCall, data.release());
 }
@@ -117,7 +117,7 @@ void Service::setNameServers(const std::vector<std::string>& name_servers,
                              PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
     auto variant = vector_to_as(name_servers);
-    setProperty(proxy(), NAMESERVERS_CONFIGURATION_STR, variant.get(), nullptr,
+    setProperty(NAMESERVERS_CONFIGURATION_STR, variant.get(), nullptr,
                 &Service::finishAsyncCall, data.release());
 }
 
