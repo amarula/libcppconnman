@@ -135,7 +135,7 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
 
     void getProperties(PropertiesCallback callback = nullptr) {
         auto data = prepareCallback(std::move(callback));
-        callMethod(proxy_, nullptr, "GetProperties", nullptr,
+        callMethod(nullptr, "GetProperties", nullptr,
                    &DBusProxy::get_property_cb, data.release());
     }
 
@@ -226,25 +226,25 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
         self->template executeCallBack<PropertiesSetCallback>(counter, success);
     }
 
-    static void setProperty(GDBusProxy* proxy, const gchar* arg_name,
-                            GVariant* arg_value, GCancellable* cancellable,
-                            GAsyncReadyCallback callback, gpointer user_data
+    void setProperty(const gchar* arg_name, GVariant* arg_value,
+                     GCancellable* cancellable, GAsyncReadyCallback callback,
+                     gpointer user_data
 
     ) {
         std::array<GVariant*, 2> tuple_elements{
             g_variant_new_string(arg_name), g_variant_new_variant(arg_value)};
 
         GVariant* parameters = g_variant_new_tuple(tuple_elements.data(), 2);
-        g_dbus_proxy_call(proxy, "SetProperty", parameters,
+        g_dbus_proxy_call(proxy_, "SetProperty", parameters,
                           G_DBUS_CALL_FLAGS_NONE, -1, cancellable, callback,
                           user_data);
     }
 
-    static void callMethod(GDBusProxy* proxy, GCancellable* cancellable,
-                           const gchar* arg_name, GVariant* parameters,
-                           GAsyncReadyCallback callback, gpointer user_data) {
+    void callMethod(GCancellable* cancellable, const gchar* arg_name,
+                    GVariant* parameters, GAsyncReadyCallback callback,
+                    gpointer user_data) {
         g_dbus_proxy_call(
-            proxy, arg_name,
+            proxy_, arg_name,
             (parameters != nullptr) ? parameters
                                     : g_variant_new_tuple(nullptr, 0),
             G_DBUS_CALL_FLAGS_NONE, -1, cancellable, callback, user_data);

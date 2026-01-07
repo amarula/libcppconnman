@@ -52,22 +52,22 @@ Clock::Clock(DBus* dbus)
 
 void Clock::setTime(uint64_t time, PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    setProperty(proxy(), TIME_STR, g_variant_new_uint64(time), nullptr,
+    setProperty(TIME_STR, g_variant_new_uint64(time), nullptr,
                 &Clock::finishAsyncCall, data.release());
 }
 
 void Clock::setTimeZone(const std::string& timezone,
                         PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    setProperty(proxy(), TIMEZONE_STR, g_variant_new_string(timezone.c_str()),
-                nullptr, &Clock::finishAsyncCall, data.release());
+    setProperty(TIMEZONE_STR, g_variant_new_string(timezone.c_str()), nullptr,
+                &Clock::finishAsyncCall, data.release());
 }
 
 void Clock::setTimeUpdates(const Properties::TimeUpdate time_updates,
                            PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
     setProperty(
-        proxy(), TIMEUPDATES_STR,
+        TIMEUPDATES_STR,
         g_variant_new_string((TIME_UPDATE_MAP.toString(time_updates)).data()),
         nullptr, &Clock::finishAsyncCall, data.release());
 }
@@ -76,7 +76,7 @@ void Clock::setTimeZoneUpdates(
     const Properties::TimeZoneUpdate time_zone_updates,
     PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    setProperty(proxy(), TIMEZONEUPDATES_STR,
+    setProperty(TIMEZONEUPDATES_STR,
                 g_variant_new_string(
                     (TIME_ZONE_UPDATE_MAP.toString(time_zone_updates)).data()),
                 nullptr, &Clock::finishAsyncCall, data.release());
@@ -92,7 +92,7 @@ void Clock::setTimeServers(const std::vector<std::string>& servers,
         g_variant_builder_add_value(&builder, str_variant);
     }
     GVariant* servers_variant = g_variant_builder_end(&builder);
-    setProperty(proxy(), TIMESERVERS_STR, servers_variant, nullptr,
+    setProperty(TIMESERVERS_STR, servers_variant, nullptr,
                 &Clock::finishAsyncCall, data.release());
     g_variant_builder_clear(&builder);
 }

@@ -30,15 +30,15 @@ Technology::Technology(DBus* dbus, const gchar* obj_path)
 
 void Technology::setPowered(bool powered, PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    setProperty(proxy(), POWERED_STR,
+    setProperty(POWERED_STR,
                 g_variant_new_boolean(static_cast<gboolean>(powered)), nullptr,
                 &Technology::finishAsyncCall, data.release());
 }
 
 void Technology::scan(PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    callMethod(proxy(), nullptr, SCAN_STR, nullptr,
-               &Technology::finishAsyncCall, data.release());
+    callMethod(nullptr, SCAN_STR, nullptr, &Technology::finishAsyncCall,
+               data.release());
 }
 
 void TechProperties::update(const gchar* key, GVariant* value) {
