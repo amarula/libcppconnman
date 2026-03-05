@@ -4,12 +4,9 @@ option(BUILD_EXAMPLES "Build Examples" OFF)
 option(BUILD_TESTS "Build Tests" OFF)
 option(BUILD_CONNMAN "Build Connman Proxy" OFF)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/VersionFromGit.cmake)
-version_from_git(LOG OFF TIMESTAMP "%Y%m%d%H%M%S")
-
 project(
   GDbusCpp
-  VERSION ${VERSION}
+  VERSION 1.0.0
   DESCRIPTION ""
   LANGUAGES C CXX)
 
@@ -105,7 +102,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     endif(DOXYGEN_FOUND)
   endif(BUILD_DOCS)
   set(cpack_file_name
-      "${PROJECT_NAME}-v${SEMVER}-${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_VERSION}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_CXX_COMPILER_ID}"
+      "${PROJECT_NAME}-v${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_VERSION}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_CXX_COMPILER_ID}"
   )
   set(CPACK_PACKAGE_FILE_NAME ${cpack_file_name})
   include(CPack)
