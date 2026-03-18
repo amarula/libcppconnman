@@ -238,14 +238,48 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
         callMethod(cancellable, "SetProperty", parameters, callback, user_data);
     }
 
-    void callMethod(GCancellable* cancellable, const gchar* arg_name,
+    void callMethod(GCancellable* cancellable, const std::string& arg_name,
                     GVariant* parameters, GAsyncReadyCallback callback,
                     gpointer user_data) {
-        g_dbus_proxy_call(
-            proxy_, arg_name,
-            (parameters != nullptr) ? parameters
-                                    : g_variant_new_tuple(nullptr, 0),
-            G_DBUS_CALL_FLAGS_NONE, -1, cancellable, callback, user_data);
+        struct Data {
+            GDBusProxy* proxy;
+            std::string arg_name;
+            GVariant* parameters;
+            GCancellable* cancellable;
+            GAsyncReadyCallback callback;
+            gpointer user_data;
+        };
+
+        auto data = std::make_unique<Data>(
+            Data{proxy_, arg_name,
+                 (parameters != nullptr)
+                     ? g_variant_ref_sink(parameters)
+                     : g_variant_ref_sink(g_variant_new_tuple(nullptr, 0)),
+                 (cancellable != nullptr)
+                     ? static_cast<GCancellable*>(g_object_ref(cancellable))
+                     : nullptr,
+                 callback, user_data});
+
+        g_main_context_invoke_full(
+            dbus_->context(), G_PRIORITY_DEFAULT,
+            [](gpointer user_data) -> gboolean {
+                auto* data = static_cast<Data*>(user_data);
+
+                g_dbus_proxy_call(data->proxy, data->arg_name.c_str(),
+                                  data->parameters, G_DBUS_CALL_FLAGS_NONE, -1,
+                                  data->cancellable, data->callback,
+                                  data->user_data);
+
+                return G_SOURCE_REMOVE;
+            },
+            data.release(),
+            [](gpointer user_data) {
+                std::unique_ptr<Data> data(static_cast<Data*>(user_data));
+                g_variant_unref(data->parameters);
+                if (data->cancellable != nullptr) {
+                    g_object_unref(data->cancellable);
+                }
+            });
     }
 };
 
