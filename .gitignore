@@ -3,3 +3,4 @@ build*
 doc
 tags
 CMakeUserPresets.json
+CMakeLists.txt.user
