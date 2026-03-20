@@ -235,9 +235,7 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
             g_variant_new_string(arg_name), g_variant_new_variant(arg_value)};
 
         GVariant* parameters = g_variant_new_tuple(tuple_elements.data(), 2);
-        g_dbus_proxy_call(proxy_, "SetProperty", parameters,
-                          G_DBUS_CALL_FLAGS_NONE, -1, cancellable, callback,
-                          user_data);
+        callMethod(cancellable, "SetProperty", parameters, callback, user_data);
     }
 
     void callMethod(GCancellable* cancellable, const gchar* arg_name,
