@@ -20,21 +20,21 @@ install(
   COMPONENT ${PROJECT_NAME}-dev)
 
 if(BUILD_CONNMAN)
-  add_executable(gconnman_clock_test gconnman_clock_test.cpp)
-  target_link_libraries(gconnman_clock_test PRIVATE GConnmanDbus gtest_main)
+  foreach(connman_test gconnman_clock_test gconnman_tech_test
+                       gconnman_serv_test)
+    add_executable(${connman_test} ${connman_test}.cpp qt_thread_bundle.hpp)
+    target_link_libraries(${connman_test} PRIVATE GConnmanDbus gtest_main)
 
-  add_executable(gconnman_tech_test gconnman_tech_test.cpp)
-  target_link_libraries(gconnman_tech_test PRIVATE GConnmanDbus gtest_main)
+    target_include_directories(${connman_test}
+                               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-  add_executable(gconnman_serv_test gconnman_serv_test.cpp)
-  target_link_libraries(gconnman_serv_test PRIVATE GConnmanDbus gtest_main)
+    install(
+      TARGETS ${connman_test}
+      EXPORT ${PROJECT_NAME}-config
+      COMPONENT ${PROJECT_NAME}-dev)
+  endforeach()
 
-  install(
-    TARGETS gconnman_clock_test gconnman_tech_test gconnman_serv_test
-    EXPORT ${PROJECT_NAME}-config
-    COMPONENT ${PROJECT_NAME}-dev)
 endif(BUILD_CONNMAN)
-
 
 add_executable(log_test log_test.cpp)
 target_link_libraries(log_test PRIVATE GDbusProxy gtest_main)
