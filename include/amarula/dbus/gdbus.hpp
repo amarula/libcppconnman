@@ -18,6 +18,7 @@ class DBus {
     unsigned int pending_calls_{0};
     GDBusConnection* connection_ = nullptr;
     GMainLoop* loop_{nullptr};
+    GMainContext* ctx_{nullptr};
 
     static auto on_loop_started(gpointer user_data) -> gboolean;
 
@@ -35,6 +36,7 @@ class DBus {
     void onAnyAsyncStart();
 
     [[nodiscard]] auto connection() const { return connection_; }
+    [[nodiscard]] auto context() { return ctx_; }
 };
 
 }  // namespace Amarula::DBus::G
