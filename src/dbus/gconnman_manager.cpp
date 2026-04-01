@@ -43,8 +43,7 @@ void ManaProperties::update(const gchar* key, GVariant* value) {
 
 Manager::Manager(DBus* dbus, const std::string& agent_path)
     : DBusProxy(dbus, SERVICE, MANAGER_PATH, MANAGER_INTERFACE),
-      agent_{
-          std::unique_ptr<Agent>(new Agent(dbus->connection(), agent_path))} {
+      agent_{std::unique_ptr<Agent>(new Agent(dbus, agent_path))} {
     setup_agent();
     get_technologies();
     get_services();
