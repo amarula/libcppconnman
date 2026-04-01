@@ -4,6 +4,7 @@
 
 #include <amarula/dbus/connman/gagent.hpp>
 #include <amarula/log.hpp>
+#include <condition_variable>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -28,8 +29,8 @@ static constexpr const char *INTROSPECTION_XML =
     "  </interface>"
     "</node>";
 
-Agent::Agent(GDBusConnection *connection, const std::string &path)
-    : connection_{connection} {
+Agent::Agent(DBus *dbus, const std::string &path)
+    : connection_{dbus->connection()} {
     if (!path.empty()) {
         path_ = path;
     }
@@ -42,16 +43,54 @@ Agent::Agent(GDBusConnection *connection, const std::string &path)
         throw std::runtime_error(msg);
     }
 
-    registration_id_ = g_dbus_connection_register_object(
-        connection, path_.c_str(), *(node_info_->interfaces), &INTERFACE_VTABLE,
-        this, nullptr, &err);
+    struct Data {
+        Agent *self;
+        std::mutex mtx;
+        std::condition_variable cv;
+        bool done{false};
+        std::string error;
+    };
 
-    if (registration_id_ == 0) {
-        std::string const msg =
-            "Failed to register agent: " + std::string(err->message);
-        g_error_free(err);
+    auto data = Data{this};
+
+    g_main_context_invoke_full(
+        dbus->context(), G_PRIORITY_HIGH,
+        [](gpointer user_data) -> gboolean {
+            auto *data = static_cast<Data *>(user_data);
+
+            GError *err = nullptr;
+
+            data->self->registration_id_ = g_dbus_connection_register_object(
+                data->self->connection_, data->self->path_.c_str(),
+                *(data->self->node_info_->interfaces), &INTERFACE_VTABLE,
+                data->self, nullptr, &err);
+
+            if (data->self->registration_id_ == 0) {
+                data->error =
+                    "Failed to register agent: " + std::string(err->message);
+                g_error_free(err);
+            }
+
+            return G_SOURCE_REMOVE;
+        },
+        &data,
+        [](gpointer user_data) {
+            auto *data = static_cast<Data *>(user_data);
+            {
+                std::lock_guard<std::mutex> const lock(data->mtx);
+                data->done = true;
+            }
+            data->cv.notify_all();
+        });
+
+    {
+        std::unique_lock<std::mutex> lock(data.mtx);
+        data.cv.wait(lock, [&] { return data.done; });
+    }
+
+    if (!data.error.empty()) {
         g_dbus_node_info_unref(node_info_);
-        throw std::runtime_error(msg);
+        throw std::runtime_error(data.error);
     }
 }
 Agent::~Agent() {
