@@ -83,6 +83,47 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
     }
 
    protected:
+    template <typename Callback>
+    void connectSignal(const std::string& signal_name, Callback callback,
+                       gpointer user_data) {
+        struct Data {
+            GDBusProxy* proxy;
+            std::string signal_name;
+            Callback callback;
+            gpointer user_data;
+            std::mutex mtx;
+            std::condition_variable cv;
+            bool done{false};
+        };
+
+        Data data{proxy_, signal_name, callback, user_data};
+
+        g_main_context_invoke_full(
+            dbus_->context(), G_PRIORITY_DEFAULT,
+            [](gpointer user_data) -> gboolean {
+                auto* data = static_cast<Data*>(user_data);
+
+                g_signal_connect(data->proxy, data->signal_name.c_str(),
+                                 G_CALLBACK(data->callback), data->user_data);
+
+                return G_SOURCE_REMOVE;
+            },
+            &data,
+            [](gpointer user_data) {
+                auto* data = static_cast<Data*>(user_data);
+                {
+                    std::lock_guard<std::mutex> const lock(data->mtx);
+                    data->done = true;
+                }
+                data->cv.notify_all();
+            });
+
+        {
+            std::unique_lock<std::mutex> lock(data.mtx);
+            data.cv.wait(lock, [&] { return data.done; });
+        }
+    }
+
     void updateProperties(GVariant* properties) {
         GVariantIter* iter = g_variant_iter_new(properties);
         GVariant* prop = nullptr;
@@ -176,23 +217,65 @@ class DBusProxy : public std::enable_shared_from_this<DBusProxy<Properties>> {
         dbus_->onAnyAsyncDone();
     }
 
-    explicit DBusProxy(DBus* dbus, const gchar* name, const gchar* obj_path,
-                       const gchar* interface_name)
+    explicit DBusProxy(DBus* dbus, const std::string& name,
+                       const std::string& obj_path,
+                       const std::string& interface_name)
         : dbus_{dbus} {
-        GError* err = nullptr;
+        struct Data {
+            DBusProxy* proxy;
+            std::string name;
+            std::string obj_path;
+            std::string interface_name;
+            std::mutex mtx;
+            std::condition_variable cv;
+            bool done{false};
+            std::string error;
+        };
 
-        proxy_ = g_dbus_proxy_new_sync(dbus_->connection(),
-                                       G_DBUS_PROXY_FLAGS_NONE, nullptr, name,
-                                       obj_path, interface_name, nullptr, &err);
-        if (proxy_ == nullptr) {
-            std::string const msg =
-                "Failed to create proxy: " + std::string(err->message);
-            g_error_free(err);
-            throw std::runtime_error(msg);
+        auto data = Data{this, name, obj_path, interface_name};
+
+        g_main_context_invoke_full(
+            dbus_->context(), G_PRIORITY_HIGH,
+            [](gpointer user_data) -> gboolean {
+                auto* data = static_cast<Data*>(user_data);
+
+                GError* err = nullptr;
+
+                data->proxy->proxy_ = g_dbus_proxy_new_sync(
+                    data->proxy->dbus_->connection(), G_DBUS_PROXY_FLAGS_NONE,
+                    nullptr, data->name.c_str(), data->obj_path.c_str(),
+                    data->interface_name.c_str(), nullptr, &err);
+
+                if (data->proxy->proxy_ == nullptr) {
+                    data->error =
+                        "Failed to create proxy: " + std::string(err->message);
+                    g_error_free(err);
+                } else {
+                    g_signal_connect(
+                        data->proxy->proxy_, "g-signal::PropertyChanged",
+                        G_CALLBACK(&DBusProxy::on_properties_changed_cb),
+                        data->proxy);
+                }
+
+                return G_SOURCE_REMOVE;
+            },
+            &data,
+            [](gpointer user_data) {
+                auto* data = static_cast<Data*>(user_data);
+                {
+                    std::lock_guard<std::mutex> const lock(data->mtx);
+                    data->done = true;
+                }
+                data->cv.notify_all();
+            });
+        {
+            std::unique_lock<std::mutex> lock(data.mtx);
+            data.cv.wait(lock, [&] { return data.done; });
         }
-        g_signal_connect(proxy_, "g-signal::PropertyChanged",
-                         G_CALLBACK(&DBusProxy::on_properties_changed_cb),
-                         this);
+
+        if (!data.error.empty()) {
+            throw std::runtime_error(data.error);
+        }
     }
 
     template <typename T>
