@@ -2,6 +2,7 @@
 #include <gio/gio.h>
 #include <glib.h>
 
+#include <amarula/dbus/gdbus.hpp>
 #include <functional>
 #include <string>
 #include <utility>
@@ -15,8 +16,7 @@ class Agent {
     GDBusConnection *connection_{nullptr};
     std::string path_{"/net/amarula/gconnman/agent"};
 
-    explicit Agent(GDBusConnection *connection,
-                   const std::string &path = std::string());
+    explicit Agent(DBus *dbus, const std::string &path = std::string());
 
     using RequestInputCallback =
         std::function<GVariant *(const gchar *service, GVariant *fields)>;
