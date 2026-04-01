@@ -49,14 +49,12 @@ Manager::Manager(DBus* dbus, const std::string& agent_path)
     get_technologies();
     get_services();
 
-    g_signal_connect(proxy(), "g-signal::TechnologyRemoved",
-                     G_CALLBACK(&Manager::on_technology_added_removed_cb),
-                     this);
-    g_signal_connect(proxy(), "g-signal::TechnologyAdded",
-                     G_CALLBACK(&Manager::on_technology_added_removed_cb),
-                     this);
-    g_signal_connect(proxy(), "g-signal::ServicesChanged",
-                     G_CALLBACK(&Manager::on_services_changed_cb), this);
+    connectSignal("g-signal::TechnologyRemoved",
+                  &Manager::on_technology_added_removed_cb, this);
+    connectSignal("g-signal::TechnologyAdded",
+                  &Manager::on_technology_added_removed_cb, this);
+    connectSignal("g-signal::ServicesChanged", &Manager::on_services_changed_cb,
+                  this);
 }
 
 void Manager::process_services_changed(
