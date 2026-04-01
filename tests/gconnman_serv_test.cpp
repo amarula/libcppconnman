@@ -12,6 +12,7 @@ using Amarula::DBus::G::Connman::Connman;
 using Error = Amarula::DBus::G::Connman::ServProperties::Error;
 using State = Amarula::DBus::G::Connman::ServProperties::State;
 using Type = Amarula::DBus::G::Connman::TechProperties::Type;
+using ServType = Amarula::DBus::G::Connman::ServProperties::Type;
 
 TEST(Connman, getServs) {
     bool called = false;
@@ -96,7 +97,8 @@ TEST(Connman, ForgetAndDisconnectService) {
                 const auto name = props.getName();
                 const auto state = props.getState();
 
-                if (props.getError() != Error::None || props.isFavorite()) {
+                if ((props.getError() != Error::None || props.isFavorite()) &&
+                    props.getType() != ServType::Ethernet) {
                     std::cout << "Removing service: " << name << '\n';
                     serv->remove([serv, name](bool success) {
                         EXPECT_TRUE(success);
