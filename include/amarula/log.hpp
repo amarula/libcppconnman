@@ -24,11 +24,7 @@ class Log {
 
    private:
     static auto state() -> std::atomic<bool>& {
-#ifdef LCM_LOG_DEFAULT_ENABLED
-        static std::atomic<bool> flag{true};
-#else
         static std::atomic<bool> flag{false};
-#endif
         return flag;
     }
 };
