@@ -58,13 +58,9 @@ DBus::DBus(const std::string& bus_name, const std::string& object_path)
     g_variant_unref(result);
     g_main_context_pop_thread_default(ctx_);
     start();
-    {
-        std::unique_lock<std::mutex> lock(mtx_);
-        cv_.wait(lock, [this] { return running_; });
-    }
 }
 
-DBus::~DBus() {
+void DBus::stop() {
     {
         std::lock_guard<std::mutex> const lock(mtx_);
         running_ = false;
@@ -76,9 +72,17 @@ DBus::~DBus() {
     if (glib_thread_.joinable()) {
         glib_thread_.join();
     }
+}
+
+DBus::~DBus() {
+    stop();
+    g_main_context_push_thread_default(ctx_);
+    while (g_main_context_iteration(ctx_, FALSE) != 0) {
+    }
     if (connection_ != nullptr) {
         g_object_unref(connection_);
     }
+    g_main_context_pop_thread_default(ctx_);
     g_main_context_unref(ctx_);
 }
 
@@ -103,6 +107,10 @@ void DBus::start() {
             g_main_loop_unref(loop_);
             loop_ = nullptr;
         });
+    }
+    {
+        std::unique_lock<std::mutex> lock(mtx_);
+        cv_.wait(lock, [this] { return running_; });
     }
 }
 
