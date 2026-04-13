@@ -34,6 +34,7 @@ class DBus {
     void start();
     void onAnyAsyncDone();
     void onAnyAsyncStart();
+    void stop();
 
     [[nodiscard]] auto connection() const { return connection_; }
     [[nodiscard]] auto context() { return ctx_; }
