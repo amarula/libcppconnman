@@ -1,5 +1,3 @@
-add_compile_definitions(LCM_LOG_DEFAULT_ENABLED=1)
-
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -22,7 +20,8 @@ install(
 if(BUILD_CONNMAN)
   foreach(connman_test gconnman_clock_test gconnman_tech_test
                        gconnman_serv_test)
-    add_executable(${connman_test} ${connman_test}.cpp qt_thread_bundle.hpp)
+    add_executable(${connman_test} ${connman_test}.cpp qt_thread_bundle.hpp
+                                   logging_init.cpp)
     target_link_libraries(${connman_test} PRIVATE GConnmanDbus gtest_main)
 
     target_include_directories(${connman_test}

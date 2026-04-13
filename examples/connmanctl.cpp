@@ -18,6 +18,7 @@ auto main() -> int {
     std::mutex cin_mutex;
     std::condition_variable cin_cv;
     bool connecting = false;
+    Amarula::Log::enable(true);
     Connman connman;
     const auto manager = connman.manager();
     manager->onRequestInputPassphrase([&](const auto& service) -> auto {
