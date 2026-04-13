@@ -20,4 +20,11 @@ Connman::Connman()
     clock_->getProperties();
 }
 
+Connman::~Connman() {
+    dbus_->stop();
+    manager_.reset();
+    clock_.reset();
+    dbus_.reset();
+}
+
 }  // namespace Amarula::DBus::G::Connman
