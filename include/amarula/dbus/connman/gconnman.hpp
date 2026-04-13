@@ -19,7 +19,7 @@ class Connman {
     auto operator=(const Connman&) -> Connman& = delete;
     Connman(Connman&&) = delete;
     auto operator=(Connman&&) -> Connman& = delete;
-    ~Connman() { dbus_.reset(); }
+    ~Connman();
 
     [[nodiscard]] auto clock() const { return clock_; }
     [[nodiscard]] auto manager() const { return manager_; }
