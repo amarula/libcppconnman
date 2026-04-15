@@ -29,8 +29,7 @@ static constexpr const char *INTROSPECTION_XML =
     "  </interface>"
     "</node>";
 
-Agent::Agent(DBus *dbus, const std::string &path)
-    : connection_{dbus->connection()} {
+Agent::Agent(DBus *dbus, const std::string &path) : dbus_{dbus} {
     if (!path.empty()) {
         path_ = path;
     }
@@ -61,7 +60,7 @@ Agent::Agent(DBus *dbus, const std::string &path)
             GError *err = nullptr;
 
             data->self->registration_id_ = g_dbus_connection_register_object(
-                data->self->connection_, data->self->path_.c_str(),
+                data->self->dbus_->connection(), data->self->path_.c_str(),
                 *(data->self->node_info_->interfaces), &INTERFACE_VTABLE,
                 data->self, nullptr, &err);
 
@@ -94,7 +93,7 @@ Agent::Agent(DBus *dbus, const std::string &path)
     }
 }
 Agent::~Agent() {
-    g_dbus_connection_unregister_object(connection_, registration_id_);
+    g_dbus_connection_unregister_object(dbus_->connection(), registration_id_);
     g_dbus_node_info_unref(node_info_);
 }
 
@@ -120,17 +119,45 @@ void Agent::dispatch_method_call(GDBusMethodInvocation *invocation,
         GVariant *child_fields = g_variant_get_child_value(parameters, 1);
 
         service = g_variant_get_string(child_service, nullptr);
+        std::string service_str(service);
         fields = g_variant_ref(child_fields);
 
         g_variant_unref(child_service);
         g_variant_unref(child_fields);
 
-        auto *result = request_input_cb_(service, fields);
+        g_object_ref(invocation);
 
-        GVariant *tuple = g_variant_new_tuple(&result, 1);
+        std::thread([ctx = dbus_->context(), callback = request_input_cb_,
+                     invocation, service_str = std::move(service_str),
+                     fields]() {
+            GVariant *result = callback(service_str.c_str(), fields);
+            g_variant_unref(fields);
 
-        g_dbus_method_invocation_return_value(invocation, tuple);
-        g_variant_unref(fields);
+            struct Data {
+                GDBusMethodInvocation *invocation;
+                GVariant *result;
+            };
+
+            auto data = std::make_unique<Data>(
+                Data{.invocation = invocation, .result = result});
+
+            g_main_context_invoke_full(
+                ctx, G_PRIORITY_DEFAULT,
+                [](gpointer user_data) -> gboolean {
+                    auto *data = static_cast<Data *>(user_data);
+
+                    GVariant *tuple = g_variant_new_tuple(&data->result, 1);
+                    g_dbus_method_invocation_return_value(data->invocation,
+                                                          tuple);
+
+                    return G_SOURCE_REMOVE;
+                },
+                data.release(),
+                [](gpointer user_data) {
+                    std::unique_ptr<Data> data(static_cast<Data *>(user_data));
+                    g_object_unref(data->invocation);
+                });
+        }).detach();
         return;
     }
 

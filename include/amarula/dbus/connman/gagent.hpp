@@ -13,7 +13,7 @@ class Connman;
 class Agent {
     GDBusNodeInfo *node_info_;
     guint registration_id_{0};
-    GDBusConnection *connection_{nullptr};
+    DBus *dbus_;
     std::string path_{"/net/amarula/gconnman/agent"};
 
     explicit Agent(DBus *dbus, const std::string &path = std::string());
