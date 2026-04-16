@@ -89,22 +89,29 @@ void Manager::process_services_changed(
 void Manager::setup_agent() {
     agent_->set_request_input_handler([this](const gchar* service_path,
                                              GVariant* fields) -> GVariant* {
-        std::lock_guard<std::mutex> const lock(mtx_);
         GVariantBuilder builder;
         g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
-        auto service_it = std::ranges::find_if(
-            services_, [&service_path](const auto& service) {
-                return service->objPath() == service_path;
-            });
 
-        if (service_it != services_.end()) {
+        std::shared_ptr<Service> found_service;
+        {
+            std::lock_guard<std::mutex> const lock(mtx_);
+            auto service_it = std::ranges::find_if(
+                services_, [&service_path](const auto& service) {
+                    return service->objPath() == service_path;
+                });
+            if (service_it != services_.end()) {
+                found_service = *service_it;
+            }
+        }
+
+        if (found_service) {
             auto* parsed_fields = parse_fields(fields);
             auto input_requested = classify_input(parsed_fields);
             switch (input_requested) {
                 case InputType::InputWpA2Passphrase:
                     if (request_input_passphrase_cb_ != nullptr) {
                         const auto passphrase =
-                            request_input_passphrase_cb_(*service_it);
+                            request_input_passphrase_cb_(found_service);
                         g_variant_builder_add(
                             &builder, "{sv}", "Passphrase",
                             g_variant_new_string(passphrase.second.c_str()));
@@ -113,7 +120,7 @@ void Manager::setup_agent() {
                 case InputType::InputWpA2PassphraseWpsAlternative:
                     if (request_input_passphrase_cb_ != nullptr) {
                         const auto passphrase =
-                            request_input_passphrase_cb_(*service_it);
+                            request_input_passphrase_cb_(found_service);
 
                         g_variant_builder_add(
                             &builder, "{sv}",
@@ -123,8 +130,8 @@ void Manager::setup_agent() {
                     break;
                 case InputType::InputHiddenNetworkName:
                     if (request_input_hidden_network_name_cb_ != nullptr) {
-                        const auto name =
-                            request_input_hidden_network_name_cb_(*service_it);
+                        const auto name = request_input_hidden_network_name_cb_(
+                            found_service);
 
                         GVariant* value = nullptr;
                         if (name.first) {
@@ -144,7 +151,7 @@ void Manager::setup_agent() {
                 case InputType::InputWpaEnterprise:
                     if (request_input_wpa_enterprise_cb_ != nullptr) {
                         const auto identity_password =
-                            request_input_wpa_enterprise_cb_(*service_it);
+                            request_input_wpa_enterprise_cb_(found_service);
 
                         g_variant_builder_add(
                             &builder, "{sv}", "Identity",
@@ -173,7 +180,7 @@ void Manager::setup_agent() {
                 case InputType::InputWispr:
                     if (request_input_wispr_enabled_cb_ != nullptr) {
                         const auto user_password =
-                            request_input_wispr_enabled_cb_(*service_it);
+                            request_input_wispr_enabled_cb_(found_service);
 
                         g_variant_builder_add(
                             &builder, "{sv}", "Username",
