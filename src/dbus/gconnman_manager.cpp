@@ -107,6 +107,7 @@ void Manager::setup_agent() {
         if (found_service) {
             auto* parsed_fields = parse_fields(fields);
             auto input_requested = classify_input(parsed_fields);
+            g_ptr_array_unref(parsed_fields);
             switch (input_requested) {
                 case InputType::InputWpA2Passphrase:
                     if (request_input_passphrase_cb_ != nullptr) {
@@ -394,8 +395,20 @@ using FieldDescription = struct {
     gchar* requirement;
 };
 
+static void field_description_free(gpointer data) {
+    auto* desc = static_cast<FieldDescription*>(data);
+    if (desc == nullptr) {
+        return;
+    }
+
+    g_free(desc->field_name);
+    g_free(desc->type);
+    g_free(desc->requirement);
+    g_free(desc);
+}
+
 auto Manager::parse_fields(GVariant* fields) -> GPtrArray* {
-    GPtrArray* array = g_ptr_array_new_with_free_func(g_free);
+    GPtrArray* array = g_ptr_array_new_with_free_func(field_description_free);
 
     GVariantIter iter;
     const gchar* field_name = nullptr;
