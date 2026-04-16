@@ -35,6 +35,5 @@ if(BUILD_CONNMAN)
     COMPONENT ${PROJECT_NAME}-dev)
 endif(BUILD_CONNMAN)
 
-
 add_executable(log_test log_test.cpp)
 target_link_libraries(log_test PRIVATE GDbusProxy gtest_main)
