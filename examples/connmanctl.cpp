@@ -79,7 +79,7 @@ auto main() -> int {
                 }
             }
         }
-        if (cmd == "agent") {
+        else if (cmd == "agent") {
             auto on_register = [arg](const auto success) {
                 if (success) {
                     std::cout << "Agent "
