@@ -27,7 +27,7 @@ TEST(Connman, ClockSetTimeUpdates) {
             EXPECT_NE(callback_tid, main_tid);
             EXPECT_NE(callback_tid, loop_tid);
             std::cout << "onPropertyChanged:\n";
-            props.print();
+            std::cout << props;
         });
     connman.clock()->setTimeUpdates(
         TimeUpdate::Auto, [main_tid = thread_bundle.main_tid,
@@ -45,7 +45,7 @@ TEST(Connman, ClockSetTime) {
     const guint time = TEST_TIME;
     connman.clock()->onPropertyChanged([](auto& props) {
         std::cout << "onPropertyChanged:\n";
-        props.print();
+        std::cout << props;
     });
     connman.clock()->setTimeUpdates(
         TimeUpdate::Manual, [&connman](auto success) {
@@ -54,7 +54,7 @@ TEST(Connman, ClockSetTime) {
                 EXPECT_TRUE(success);
                 connman.clock()->getProperties([](auto& props) {
                     std::cout << "getProperties:\n";
-                    props.print();
+                    std::cout << props;
                 });
             });
         });
@@ -65,7 +65,7 @@ TEST(Connman, ClockSetTimeServers1) {
     const Connman connman;
     connman.clock()->onPropertyChanged([](auto& props) {
         std::cout << "onPropertyChanged:\n";
-        props.print();
+        std::cout << props;
     });
     const std::vector<std::string> servers = {"time1.google.com",
                                               "time2.google.com"};
@@ -78,7 +78,7 @@ TEST(Connman, ClockSetTimeServers2) {
     const Connman connman;
     connman.clock()->onPropertyChanged([](auto& props) {
         std::cout << "onPropertyChanged:\n";
-        props.print();
+        std::cout << props;
     });
     const std::vector<std::string> servers = {"time1.example.com",
                                               "time2.example.com"};
@@ -86,7 +86,7 @@ TEST(Connman, ClockSetTimeServers2) {
         EXPECT_TRUE(success);
         connman.clock()->getProperties([](auto& props) {
             std::cout << "getProperties:\n";
-            props.print();
+            std::cout << props;
         });
     });
 }
@@ -96,7 +96,7 @@ TEST(Connman, ClockSetTimeZoneUpdates) {
     const Connman connman;
     connman.clock()->onPropertyChanged([](auto& props) {
         std::cout << "onPropertyChanged:\n";
-        props.print();
+        std::cout << props;
     });
     connman.clock()->setTimeZoneUpdates(
         TimeZoneUpdate::Auto,
@@ -108,7 +108,7 @@ TEST(Connman, ClockSetTimeZone) {
     const Connman connman;
     connman.clock()->onPropertyChanged([](auto& props) {
         std::cout << "onPropertyChanged:\n";
-        props.print();
+        std::cout << props;
     });
     connman.clock()->setTimeZoneUpdates(
         TimeZoneUpdate::Manual, [&connman](auto success) {
@@ -118,7 +118,7 @@ TEST(Connman, ClockSetTimeZone) {
                     EXPECT_TRUE(success);
                     connman.clock()->getProperties([](auto& props) {
                         std::cout << "getProperties:\n";
-                        props.print();
+                        std::cout << props;
                     });
                 });
         });
@@ -145,6 +145,6 @@ TEST(Connman, ClockGetProperties) {
             const auto callback_tid = std::this_thread::get_id();
             EXPECT_NE(callback_tid, main_tid);
             EXPECT_NE(callback_tid, loop_tid);
-            props.print();
+            std::cout << props;
         });
 }

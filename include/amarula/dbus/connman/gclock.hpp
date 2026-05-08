@@ -25,7 +25,8 @@ struct ClockProperties {
         return time_server_synced_;
     }
 
-    void print() const;
+    friend auto operator<<(std::ostream& ostr,
+                           const ClockProperties& object) -> std::ostream&;
 
    private:
     uint64_t time_{0};

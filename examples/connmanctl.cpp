@@ -75,7 +75,7 @@ auto main() -> int {
                     const auto props = tech->properties();
                     std::cout << "Technology: " << props.getName() << " "
                               << tech->objPath() << "\n";
-                    props.print();
+                    std::cout << props;
                 }
             }
         }
@@ -128,7 +128,7 @@ auto main() -> int {
                         const auto props = (*iterator)->properties();
                         std::cout << "Service: " << props.getName() << " "
                                   << (*iterator)->objPath() << "\n";
-                        props.print();
+                        std::cout << props;
                     } else {
                         std::cout << "Service not found: " << arg << "\n";
                     }

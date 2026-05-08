@@ -5,7 +5,6 @@
 #include <amarula/dbus/gdbus.hpp>
 #include <amarula/dbus/gproxy.hpp>
 #include <amarula/log.hpp>
-#include <iostream>
 #include <utility>
 
 #include "gconnman_private.hpp"
@@ -60,15 +59,14 @@ void TechProperties::update(const gchar* key, GVariant* value) {
     }
 }
 
-void TechProperties::print() const {
-    LCM_LOG("@@@@@@@@@@ TechProperties: @@@@@@@@@@@@@@@\n");
-    LCM_LOG(NAME_STR << ": " << name_ << '\n');
-    LCM_LOG(TYPE_STR << ": " << TYPE_MAP.toString(type_) << '\n');
-    LCM_LOG(POWERED_STR << ": " << std::boolalpha << powered_ << '\n');
-    LCM_LOG(CONNECTED_STR << ": " << std::boolalpha << connected_ << '\n');
-    LCM_LOG(TETHERING_STR << ": " << std::boolalpha << tethering_ << '\n');
-    LCM_LOG(TETHERINGFREQ_STR << ": " << tethering_freq_ << " \n");
-    LCM_LOG("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+auto operator<<(std::ostream& ost, const TechProperties& obj) -> std::ostream& {
+    ost << NAME_STR << ": " << obj.name_ << '\n';
+    ost << TYPE_STR << ": " << TYPE_MAP.toString(obj.type_) << '\n';
+    ost << POWERED_STR << ": " << std::boolalpha << obj.powered_ << '\n';
+    ost << CONNECTED_STR << ": " << std::boolalpha << obj.connected_ << '\n';
+    ost << TETHERING_STR << ": " << std::boolalpha << obj.tethering_ << '\n';
+    ost << TETHERINGFREQ_STR << ": " << obj.tethering_freq_ << " \n";
+    return ost;
 }
 
 }  // namespace Amarula::DBus::G::Connman

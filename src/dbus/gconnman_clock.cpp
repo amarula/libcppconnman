@@ -6,7 +6,6 @@
 #include <amarula/log.hpp>
 #include <ctime>
 #include <iomanip>
-#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -97,26 +96,25 @@ void Clock::setTimeServers(const std::vector<std::string>& servers,
     g_variant_builder_clear(&builder);
 }
 
-void ClockProperties::print() const {
-    LCM_LOG("@@@@@@@@@@ ClockProperties: @@@@@@@@@@@@@@@\n");
-    LCM_LOG(TIME_STR << ": " << time_ << " (");
-    const auto time_value = static_cast<std::time_t>(time_);
-    LCM_LOG(std::put_time(std::localtime(&time_value), "%Y-%m-%d %H:%M:%S")
-            << ")\n");
-    LCM_LOG(TIMEUPDATES_STR << ": " << TIME_UPDATE_MAP.toString(time_updates_)
-                            << '\n');
-    LCM_LOG(TIMEZONE_STR << ": " << timezone_ << '\n');
-    LCM_LOG(TIMEZONEUPDATES_STR
-            << ": " << TIME_ZONE_UPDATE_MAP.toString(timezone_updates_)
-            << '\n');
-    LCM_LOG(TIMESERVERSYNCED_STR << ": " << std::boolalpha
-                                 << time_server_synced_ << '\n');
-    LCM_LOG(TIMESERVERS_STR << ": ");
-    for (const auto& server : time_servers_) {
-        LCM_LOG(server << ' ');
+auto operator<<(std::ostream& ost,
+                const ClockProperties& obj) -> std::ostream& {
+    ost << TIME_STR << ": " << obj.time_ << " (";
+    const auto time_value = static_cast<std::time_t>(obj.time_);
+    ost << std::put_time(std::localtime(&time_value), "%Y-%m-%d %H:%M:%S")
+        << ")\n";
+    ost << TIMEUPDATES_STR << ": "
+        << TIME_UPDATE_MAP.toString(obj.time_updates_) << '\n';
+    ost << TIMEZONE_STR << ": " << obj.timezone_ << '\n';
+    ost << TIMEZONEUPDATES_STR << ": "
+        << TIME_ZONE_UPDATE_MAP.toString(obj.timezone_updates_) << '\n';
+    ost << TIMESERVERSYNCED_STR << ": " << std::boolalpha
+        << obj.time_server_synced_ << '\n';
+    ost << TIMESERVERS_STR << ": ";
+    for (const auto& server : obj.time_servers_) {
+        ost << server << ' ';
     }
-    LCM_LOG('\n');
-    LCM_LOG("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+    ost << '\n';
+    return ost;
 }
 
 }  // namespace Amarula::DBus::G::Connman
