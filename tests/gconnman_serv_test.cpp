@@ -40,7 +40,7 @@ TEST(Connman, getServs) {
                         << "Technology " << prop.getName()
                         << " was not powered ON";
                     std::cout << "onPropertyChanged:\n";
-                    prop.print();
+                    std::cout << prop;
                 });
                 const auto prop = tech->properties();
                 const auto name = prop.getName();
@@ -67,7 +67,7 @@ TEST(Connman, getServs) {
                 ASSERT_FALSE(services.empty());
                 for (const auto& serv : services) {
                     const auto props = serv->properties();
-                    props.print();
+                    std::cout << props;
                 }
             });
     }
@@ -92,10 +92,10 @@ TEST(Connman, setNameServers) {
             for (const auto& serv : services) {
                 const auto props = serv->properties();
                 const auto name = props.getName();
-                props.print();
+                std::cout << props;
                 serv->onPropertyChanged([](const auto& properties) {
                     std::cout << "onPropertyChange:\n";
-                    properties.print();
+                    std::cout << properties;
                 });
                 serv->setNameServers(
                     {"8.8.8.8", "4.4.4.4"},
@@ -143,7 +143,7 @@ TEST(Connman, ForgetAndDisconnectService) {
                         EXPECT_NE(callback_tid, loop_tid);
                         EXPECT_TRUE(success);
                         std::cout << "Service removed: " << name << '\n';
-                        serv->properties().print();
+                        std::cout << serv->properties();
                     });
                 } else if (state == State::Ready || state == State::Online) {
                     std::cout << "Disconnecting service: " << name << '\n';
@@ -154,7 +154,7 @@ TEST(Connman, ForgetAndDisconnectService) {
                         EXPECT_TRUE(success);
                         std::cout << "Service disconnected: " << serv->objPath()
                                   << '\n';
-                        serv->properties().print();
+                        std::cout << serv->properties();
                     });
                 }
             }
@@ -207,7 +207,7 @@ TEST(Connman, ConnectWifi) {
 
                     if (state == State::Idle) {
                         std::cout << "Connecting to service: " << name << '\n';
-                        props.print();
+                        std::cout << props;
                         serv->onPropertyChanged(
                             [main_tid, loop_tid](const auto& properties) {
                                 const auto callback_tid =
@@ -215,7 +215,7 @@ TEST(Connman, ConnectWifi) {
                                 EXPECT_NE(callback_tid, main_tid);
                                 EXPECT_NE(callback_tid, loop_tid);
                                 std::cout << "onPropertyChange:\n";
-                                properties.print();
+                                std::cout << properties;
                             });
                         manager->registerAgent(
                             manager->internalAgentPath(),
@@ -236,7 +236,7 @@ TEST(Connman, ConnectWifi) {
                                     std::cout
                                         << "Service connected successfully: "
                                         << success << '\n';
-                                    serv->properties().print();
+                                    std::cout << serv->properties();
                                     manager->unregisterAgent(
                                         manager->internalAgentPath());
                                 });

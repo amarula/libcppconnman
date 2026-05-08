@@ -30,7 +30,7 @@ TEST(Connman, getTechs) {
                         EXPECT_TRUE(props.isPowered())
                             << "Technology is connected but not powered";
                     }
-                    props.print();
+                    std::cout << props;
                 }
             });
     }
@@ -63,7 +63,7 @@ TEST(Connman, PowerOnAllTechnologies) {
                     EXPECT_NE(callback_tid, main_tid);
                     EXPECT_NE(callback_tid, loop_tid);
                     std::cout << "onPropertyChanged:\n";
-                    prop.print();
+                    std::cout << prop;
                 });
                 const auto prop = tech->properties();
                 const auto name = prop.getName();
@@ -141,7 +141,7 @@ TEST(Connman, PowerOffAllTechnologies) {
                         << "Technology " << prop.getName()
                         << " was not powered OFF";
                     std::cout << "onPropertyChanged:\n";
-                    prop.print();
+                    std::cout << prop;
                 });
                 const auto prop = tech->properties();
                 const auto name = prop.getName();

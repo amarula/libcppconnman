@@ -29,7 +29,8 @@ struct TechProperties {
     [[nodiscard]] auto isConnected() const { return connected_; }
     [[nodiscard]] auto isTethering() const { return tethering_; }
     [[nodiscard]] auto getTetheringFreq() const { return tethering_freq_; }
-    void print() const;
+    friend auto operator<<(std::ostream& ostr,
+                           const TechProperties& object) -> std::ostream&;
 
    private:
     bool powered_ = false;

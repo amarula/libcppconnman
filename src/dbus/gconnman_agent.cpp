@@ -5,7 +5,6 @@
 #include <amarula/dbus/connman/gagent.hpp>
 #include <amarula/log.hpp>
 #include <condition_variable>
-#include <iostream>
 #include <stdexcept>
 #include <string>
 

@@ -37,7 +37,8 @@ class IPv4 : public GVariantParser {
         Auto,
     };
 
-    void print() const;
+    friend auto operator<<(std::ostream& ostr,
+                           const IPv4& object) -> std::ostream&;
 
     [[nodiscard]] auto getMethod() const { return method_; }
     [[nodiscard]] auto getAddress() const { return address_; }
@@ -65,7 +66,8 @@ struct IPv6 : public GVariantParser {
         Auto,
     };
     enum class Privacy : uint8_t { Disabled = 0, Enabled, Preferred };
-    void print() const;
+    friend auto operator<<(std::ostream& ostr,
+                           const IPv6& object) -> std::ostream&;
     [[nodiscard]] auto getMethod() const { return method_; }
     [[nodiscard]] auto getAddress() const { return address_; }
     [[nodiscard]] auto getGateway() const { return gateway_; }
@@ -87,7 +89,8 @@ struct IPv6 : public GVariantParser {
 struct Ethernet : public GVariantParser {
    public:
     enum class Method : uint8_t { Manual = 0, Auto };
-    void print() const;
+    friend auto operator<<(std::ostream& ostr,
+                           const Ethernet& object) -> std::ostream&;
     [[nodiscard]] auto getMethod() const { return method_; }
     [[nodiscard]] auto getInterface() const { return interface_; }
     [[nodiscard]] auto getAddress() const { return address_; }
@@ -106,7 +109,8 @@ struct Ethernet : public GVariantParser {
 
 struct Provider : public GVariantParser {
    public:
-    void print() const;
+    friend auto operator<<(std::ostream& ostr,
+                           const Provider& object) -> std::ostream&;
     [[nodiscard]] auto getHost() const { return host_; }
     [[nodiscard]] auto getDomain() const { return domain_; }
     [[nodiscard]] auto getName() const { return name_; }
@@ -126,7 +130,8 @@ struct Provider : public GVariantParser {
 struct Proxy : public GVariantParser {
    public:
     enum class Method : uint8_t { Direct = 0, Auto, Manual };
-    void print() const;
+    friend auto operator<<(std::ostream& ostr,
+                           const Proxy& object) -> std::ostream&;
     [[nodiscard]] auto getMethod() const { return method_; }
     [[nodiscard]] auto getUrl() const { return url_; }
     [[nodiscard]] auto getServers() const { return servers_; }
@@ -186,7 +191,8 @@ struct ServProperties {
         OnlineCheckFailed
     };
 
-    void print() const;
+    friend auto operator<<(std::ostream& ostr,
+                           const ServProperties& object) -> std::ostream&;
     [[nodiscard]] auto getState() const { return state_; }
     [[nodiscard]] auto getType() const { return type_; }
     [[nodiscard]] auto getSecurity() const { return security_; }
