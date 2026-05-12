@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build doxygen clang-tidy python3-pip libglib2.0-dev
+          sudo apt-get install -y cmake ninja-build doxygen clang-tidy python3-pip libglib2.0-dev libreadline-dev
 
       - name: Check if formatted_code branch exists
         if: ${{ github.event_name == 'pull_request' && startsWith(github.base_ref, 'main') && github.head_ref == 'develop' }}
