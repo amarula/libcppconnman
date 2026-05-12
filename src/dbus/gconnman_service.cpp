@@ -79,10 +79,11 @@ static constexpr EnumStringMap<IPv6::Method, 5> IPV6_METHOD_MAP{
       {IPv6::Method::Fixed, "fixed"},
       {IPv6::Method::Auto, "auto"}}}};
 
-static constexpr EnumStringMap<IPv6::Privacy, 3> IPV6_PRIVACY_MAP{
+static constexpr EnumStringMap<IPv6::Privacy, 4> IPV6_PRIVACY_MAP{
     {{{IPv6::Privacy::Disabled, "disabled"},
       {IPv6::Privacy::Enabled, "enabled"},
-      {IPv6::Privacy::Preferred, "preferred"}}}};
+      {IPv6::Privacy::Preferred, "preferred"},
+      {IPv6::Privacy::Preferred, "prefered"}}}};
 
 Service::Service(DBus* dbus, const gchar* obj_path)
     : DBusProxy(dbus, SERVICE, obj_path, SERVICE_INTERFACE) {}
