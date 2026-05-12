@@ -22,6 +22,8 @@ using Amarula::DBus::G::Connman::TechProperties;
 using State = Amarula::DBus::G::Connman::ServProperties::State;
 using TechnologyType = TechProperties::Type;
 
+constexpr std::size_t MIN_WIFI_PASSPHRASE_LENGTH = 8;
+
 std::atomic<bool> has_message{false};
 std::ostringstream message;
 std::mutex message_mutex;
@@ -65,7 +67,8 @@ enum class Command : std::uint8_t {
     Disconnect,
     Remove,
     Agent,
-    Quit
+    Quit,
+    Tethering
 };
 
 inline const std::unordered_map<Command, std::string_view> command_map = {
@@ -78,7 +81,8 @@ inline const std::unordered_map<Command, std::string_view> command_map = {
     {Command::Disconnect, "disconnect"},
     {Command::Remove, "remove"},
     {Command::Agent, "agent"},
-    {Command::Quit, "quit"}};
+    {Command::Quit, "quit"},
+    {Command::Tethering, "tether"}};
 
 inline const std::unordered_map<TechnologyType, std::string_view> tech_map = {
     {TechnologyType::Ethernet, "ethernet"},
@@ -170,7 +174,8 @@ auto completion(const char* text, int start, int end) -> char** {
             completion_mode = Mode::OnOff;
         } else if (command == command_map.at(Command::Enable) ||
                    command == command_map.at(Command::Disable) ||
-                   command == command_map.at(Command::Scan)) {
+                   command == command_map.at(Command::Scan) ||
+                   command == command_map.at(Command::Tethering)) {
             completion_mode = Mode::TechHash;
         } else if (command == command_map.at(Command::Connect) ||
                    command == command_map.at(Command::Disconnect) ||
@@ -438,6 +443,78 @@ auto main() -> int {
                 }
             }
 
+        } else if (cmd == command_map.at(Command::Tethering)) {
+            std::string arg1;
+            std::string arg2;
+            iss >> arg1 >> arg2;
+            {
+                std::lock_guard<std::mutex> lock(hash_mutex);
+                if (arg.empty() ||
+                    std::find(technologies_container.begin(),
+                              technologies_container.end(),
+                              arg) == technologies_container.end() ||
+                    arg1.empty() ||
+                    (arg1 != on_off_container[0] &&
+                     arg1 != on_off_container[1]) ||
+                    (arg == tech_map.at(TechnologyType::Wifi) &&
+                     arg1 == on_off_container[0] && arg2.empty())) {
+                    std::cout << "Usage: tether  <technology> "
+                              << on_off_container[0] << "/"
+                              << on_off_container[1]
+                              << " <SSID> <PASSPHRASE> <FREQUENCY>\n";
+                    std::cout << "Available technologies:";
+                    printContainer(technologies_container);
+                    continue;
+                }
+            }
+            const auto techs = manager->technologies();
+            auto iterator = std::ranges::find_if(techs, match_technology);
+            if (iterator != techs.end()) {
+                if (arg == tech_map.at(TechnologyType::Wifi)) {
+                    std::string arg3;
+                    std::string arg4;
+                    iss >> arg3 >> arg4;
+                    (*iterator)->setTetheringIdentifier(arg2);
+
+                    if (!arg3.empty()) {
+                        if (arg3.size() >= MIN_WIFI_PASSPHRASE_LENGTH) {
+                            (*iterator)->setTetheringPassphrase(arg3);
+                        } else {
+                            std::cout << "Error setting wifi passphrase\n"
+                                      << "Passphrase must be at least "
+                                      << MIN_WIFI_PASSPHRASE_LENGTH
+                                      << " characters long\n";
+                            continue;
+                        }
+                    }
+
+                    if (!arg4.empty() &&
+                        std::all_of(arg4.begin(), arg4.end(), ::isdigit)) {
+                        (*iterator)->setTetheringFreq(std::stoi(arg4));
+                    }
+                }
+
+                const auto enable = arg1 == on_off_container[0];
+                std::cout << (enable ? "Enabling" : "Disabling")
+                          << " tethering on " << arg << "\n";
+                (*iterator)->setTethering(enable, [arg, enable](bool success) {
+                    {
+                        std::lock_guard<std::mutex> lock(message_mutex);
+                        if (success) {
+                            message << "Tethering on technology " << arg
+                                    << (enable ? " enabled" : " disabled")
+                                    << " successfully.\n";
+                        } else {
+                            message << "Failed to"
+                                    << (enable ? " enable" : " disable")
+                                    << " tethering on "
+                                       "technology "
+                                    << arg << "\n";
+                        }
+                    }
+                    has_message = true;
+                });
+            }
         } else if (cmd == command_map.at(Command::Connect) ||
                    cmd == command_map.at(Command::Disconnect)) {
             if (arg.empty()) {
