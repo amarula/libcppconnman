@@ -265,6 +265,10 @@ auto main() -> int {
         std::string cmd;
         std::string arg;
         iss >> cmd >> arg;
+        auto match_technology = [&arg](const auto& technology) {
+            const auto props = technology->properties();
+            return tech_map.at(props.getType()) == arg;
+        };
         auto match_service = [&arg](const auto& service) {
             const auto props = service->properties();
             const auto name = props.getName();
@@ -362,26 +366,24 @@ auto main() -> int {
                 }
             }
             const auto techs = manager->technologies();
-            for (const auto& tech : techs) {
-                const auto props = tech->properties();
+            auto iterator = std::ranges::find_if(techs, match_technology);
+            if (iterator != techs.end()) {
+                const auto props = (*iterator)->properties();
                 const auto name = props.getName();
-                if (tech_map.at(props.getType()) == arg) {
-                    std::cout << "Scanning " << name << "...\n";
-                    tech->scan([name](bool success) {
-                        {
-                            std::lock_guard<std::mutex> lock(message_mutex);
-                            if (success) {
-                                message << "Technology " << name
-                                        << " scanned successfully.\n";
-                            } else {
-                                message << "Failed to scan technology " << name
-                                        << ".\n";
-                            }
+                std::cout << "Scanning " << name << "...\n";
+                (*iterator)->scan([name](bool success) {
+                    {
+                        std::lock_guard<std::mutex> lock(message_mutex);
+                        if (success) {
+                            message << "Technology " << name
+                                    << " scanned successfully.\n";
+                        } else {
+                            message << "Failed to scan technology " << name
+                                    << ".\n";
                         }
-                        has_message = true;
-                    });
-                    break;
-                }
+                    }
+                    has_message = true;
+                });
             }
         } else if (cmd == command_map.at(Command::Enable) ||
                    cmd == command_map.at(Command::Disable)) {
@@ -403,40 +405,40 @@ auto main() -> int {
             std::cout << (enable ? "Enabling" : "Disabling")
                       << " technology: " << arg << "\n";
             const auto techs = manager->technologies();
-            for (const auto& tech : techs) {
-                const auto props = tech->properties();
+            auto iterator = std::ranges::find_if(techs, match_technology);
+            if (iterator != techs.end()) {
+                const auto props = (*iterator)->properties();
                 const auto name = props.getName();
-                if (tech_map.at(props.getType()) == arg) {
-                    if ((!props.isPowered() &&
-                         cmd == enable_disable_container.at(0)) ||
-                        (props.isPowered() &&
-                         cmd == enable_disable_container.at(1))) {
-                        std::cout << (enable ? "Enabling " : "Disabling ")
-                                  << name << "...\n";
-                        tech->setPowered(enable, [name, enable](bool success) {
-                            {
-                                std::lock_guard<std::mutex> lock(message_mutex);
-                                if (success) {
-                                    message
-                                        << "Technology " << name
+                if ((!props.isPowered() &&
+                     cmd == enable_disable_container.at(0)) ||
+                    (props.isPowered() &&
+                     cmd == enable_disable_container.at(1))) {
+                    std::cout << (enable ? "Enabling " : "Disabling ") << name
+                              << "...\n";
+                    (*iterator)->setPowered(enable, [name,
+                                                     enable](bool success) {
+                        {
+                            std::lock_guard<std::mutex> lock(message_mutex);
+                            if (success) {
+                                message << "Technology " << name
                                         << (enable ? " enabled" : " disabled")
                                         << " successfully.\n";
-                                } else {
-                                    message << "Failed to  "
-                                            << (enable ? " enable" : " disable")
-                                            << " technology " << name << "\n";
-                                }
+                            } else {
+                                message << "Failed to  "
+                                        << (enable ? " enable" : " disable")
+                                        << " technology " << name << "\n";
                             }
+                        }
 
-                            has_message = true;
-                        });
+                        has_message = true;
+                    });
 
-                    } else {
-                        std::cout << "Technology " << name << " is already "
-                                  << (enable ? "enabled" : "disabled") << "\n";
-                    }
+                } else {
+                    std::cout << "Technology " << name << " is already "
+                              << (enable ? "enabled" : "disabled") << "\n";
                 }
             }
+
         } else if (cmd == command_map.at(Command::Connect) ||
                    cmd == command_map.at(Command::Disconnect)) {
             if (arg.empty()) {
