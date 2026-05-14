@@ -8,6 +8,8 @@
 using Amarula::DBus::G::Connman::Connman;
 using Type = Amarula::DBus::G::Connman::TechProperties::Type;
 
+constexpr uint32_t WIFI_FREQ_2412_MHZ = 2412;
+
 TEST(Connman, getTechs) {
     bool called = false;
     {
@@ -123,6 +125,113 @@ TEST(Connman, ScanWifiTechnology) {
             });
     }
     ASSERT_TRUE(called) << "TechnologiesChanged callback was never called";
+}
+
+TEST(Connman, SetTetheringOn) {
+    bool called = false;
+    {
+        const ThreadBundle thread_bundle;
+        Connman connman;
+        const auto manager = connman.manager();
+
+        manager->onTechnologiesChanged(
+            [&called, main_tid = thread_bundle.main_tid,
+             loop_tid = thread_bundle.loop_tid](const auto& technologies) {
+                ASSERT_FALSE(technologies.empty())
+                    << "No technologies returned";
+
+                for (const auto& tech : technologies) {
+                    const auto props = tech->properties();
+                    const auto name = props.getName();
+
+                    if (props.getType() == Type::Wifi) {  // test only wifi
+                        std::cout << "Setting tethering properties for " << name
+                                  << "\n";
+                        tech->setTetheringIdentifier(
+                            "AmarulaTestSSID",
+                            [name, main_tid, loop_tid](bool success) {
+                                const auto callback_tid =
+                                    std::this_thread::get_id();
+                                EXPECT_NE(callback_tid, main_tid);
+                                EXPECT_NE(callback_tid, loop_tid);
+                                EXPECT_TRUE(success)
+                                    << "Failed to set tethering identifier for "
+                                    << name;
+                            });
+                        tech->setTetheringPassphrase(
+                            "AmarulaTestPassphrase",
+                            [name, main_tid, loop_tid](bool success) {
+                                const auto callback_tid =
+                                    std::this_thread::get_id();
+                                EXPECT_NE(callback_tid, main_tid);
+                                EXPECT_NE(callback_tid, loop_tid);
+                                EXPECT_TRUE(success)
+                                    << "Failed to set tethering passphrase for "
+                                    << name;
+                            });
+
+                        tech->setTetheringFreq(
+                            WIFI_FREQ_2412_MHZ,
+                            [name, main_tid, loop_tid](bool success) {
+                                const auto callback_tid =
+                                    std::this_thread::get_id();
+                                EXPECT_NE(callback_tid, main_tid);
+                                EXPECT_NE(callback_tid, loop_tid);
+                                EXPECT_TRUE(success)
+                                    << "Failed to set tethering frequency for "
+                                    << name;
+                            });
+                        tech->setTethering(true, [&called, name, main_tid,
+                                                  loop_tid](bool success) {
+                            const auto callback_tid =
+                                std::this_thread::get_id();
+                            EXPECT_NE(callback_tid, main_tid);
+                            EXPECT_NE(callback_tid, loop_tid);
+                            EXPECT_TRUE(success)
+                                << "Failed to set tethering for " << name;
+                            called = true;
+                        });
+                    }
+                }
+            });
+    }
+    ASSERT_TRUE(called) << "setTethering callback was never called";
+}
+
+TEST(Connman, SetTetheringOff) {
+    bool called = false;
+    {
+        const ThreadBundle thread_bundle;
+        Connman connman;
+        const auto manager = connman.manager();
+
+        manager->onTechnologiesChanged(
+            [&called, main_tid = thread_bundle.main_tid,
+             loop_tid = thread_bundle.loop_tid](const auto& technologies) {
+                ASSERT_FALSE(technologies.empty())
+                    << "No technologies returned";
+
+                for (const auto& tech : technologies) {
+                    const auto props = tech->properties();
+                    const auto name = props.getName();
+
+                    if (props.getType() == Type::Wifi) {  // test only wifi
+                        std::cout << "Disable tethering for " << name << "\n";
+                        tech->setTethering(false, [&called, name, main_tid,
+                                                   loop_tid](bool success) {
+                            const auto callback_tid =
+                                std::this_thread::get_id();
+                            EXPECT_NE(callback_tid, main_tid);
+                            EXPECT_NE(callback_tid, loop_tid);
+                            EXPECT_TRUE(success)
+                                << "Failed to unset tethering for " << name;
+                            called = true;
+                        });
+                    }
+                }
+            });
+    }
+    ASSERT_TRUE(called) << "setTethering callback was never called";
 }
 
 TEST(Connman, PowerOffAllTechnologies) {
