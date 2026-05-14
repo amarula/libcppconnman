@@ -60,7 +60,7 @@ void Technology::setTetheringPassphrase(const std::string& passphrase,
 void Technology::setTetheringFreq(const uint32_t frequency,
                                   PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
-    setProperty(TETHERINGFREQ_STR, g_variant_new_uint32(frequency), nullptr,
+    setProperty(TETHERINGFREQ_STR, g_variant_new_int32(frequency), nullptr,
                 &Technology::finishAsyncCall, data.release());
 }
 
@@ -75,7 +75,6 @@ void TechProperties::update(const gchar* key, GVariant* value) {
         name_ = g_variant_get_string(value, nullptr);
     } else if (g_strcmp0(key, TYPE_STR) == 0U) {
         type_ = TYPE_MAP.fromString(g_variant_get_string(value, nullptr));
-
     } else if (g_strcmp0(key, POWERED_STR) == 0U) {
         powered_ = g_variant_get_boolean(value) == 1U;
     } else if (g_strcmp0(key, CONNECTED_STR) == 0U) {
