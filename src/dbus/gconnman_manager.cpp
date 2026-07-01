@@ -83,7 +83,6 @@ void Manager::process_services_changed(
         }
     }
     services_ = new_order_of_services;
-    services_changed_cb_(services_);
 }
 
 void Manager::setup_agent() {
@@ -261,16 +260,29 @@ void Manager::get_proxies_cb(GObject* proxy, GAsyncResult* res,
     if (success) {
         proxies = self->template arrays_to_proxies<ProxyType>(out_properties);
         g_variant_unref(out_properties);
-        std::lock_guard<std::mutex> const lock(self->mtx_);
         if constexpr (std::is_same_v<ProxyType, Service>) {
-            self->services_ = proxies;
-            if (!self->services_.empty()) {
-                self->services_changed_cb_(self->services_);
+            OnServListChangedCallback callback;
+            {
+                std::lock_guard<std::mutex> const lock(self->mtx_);
+                self->services_ = proxies;
+                if (!self->services_.empty()) {
+                    callback = self->services_changed_cb_;
+                }
+            }
+            if (callback) {
+                callback(proxies);
             }
         } else {
-            self->technologies_ = proxies;
-            if (!self->technologies_.empty()) {
-                self->technologies_changed_cb_(self->technologies_);
+            OnTechListChangedCallback callback;
+            {
+                std::lock_guard<std::mutex> const lock(self->mtx_);
+                self->technologies_ = proxies;
+                if (!self->technologies_.empty()) {
+                    callback = self->technologies_changed_cb_;
+                }
+            }
+            if (callback) {
+                callback(proxies);
             }
         }
 
@@ -314,25 +326,34 @@ void Manager::on_technology_added_removed_cb(GDBusProxy* /*proxy*/,
                                              GVariant* parameters,
                                              gpointer user_data) {
     auto* self = static_cast<Manager*>(user_data);
-    std::lock_guard<std::mutex> const lock(self->mtx_);
-    if (g_strcmp0(signal_name, "g-signal::TechnologyAdded") == 0U) {
-        const auto technology =
-            self->template dict_to_proxy<Technology>(parameters);
-        self->technologies_.push_back(technology);
+    Manager::ProxyList<Technology> updated_technologies;
+    OnTechListChangedCallback callback;
+    {
+        std::lock_guard<std::mutex> const lock(self->mtx_);
+        if (g_strcmp0(signal_name, "g-signal::TechnologyAdded") == 0U) {
+            const auto technology =
+                self->template dict_to_proxy<Technology>(parameters);
+            self->technologies_.push_back(technology);
 
-    } else if (g_strcmp0(signal_name, "g-signal::TechnologyRemoved") == 0U) {
-        const auto object_path =
-            std::string(g_variant_get_string(parameters, nullptr));
+        } else if (g_strcmp0(signal_name, "g-signal::TechnologyRemoved") ==
+                   0U) {
+            const auto object_path =
+                std::string(g_variant_get_string(parameters, nullptr));
 
-        self->technologies_.erase(
-            std::remove_if(self->technologies_.begin(),
-                           self->technologies_.end(),
-                           [&object_path](const auto& technology) {
-                               return technology->objPath() == object_path;
-                           }),
-            self->technologies_.end());
+            self->technologies_.erase(
+                std::remove_if(self->technologies_.begin(),
+                               self->technologies_.end(),
+                               [&object_path](const auto& technology) {
+                                   return technology->objPath() == object_path;
+                               }),
+                self->technologies_.end());
+        }
+        updated_technologies = self->technologies_;
+        callback = self->technologies_changed_cb_;
     }
-    self->technologies_changed_cb_(self->technologies_);
+    if (callback) {
+        callback(updated_technologies);
+    }
 }
 
 void Manager::on_services_changed_cb(GDBusProxy* /*proxy*/,
@@ -371,8 +392,17 @@ void Manager::on_services_changed_cb(GDBusProxy* /*proxy*/,
     }
     g_variant_unref(removed);
 
-    std::lock_guard<std::mutex> const lock(self->mtx_);
-    self->process_services_changed(services_removed, services_changed);
+    Manager::ProxyList<Service> updated_services;
+    OnServListChangedCallback callback;
+    {
+        std::lock_guard<std::mutex> const lock(self->mtx_);
+        self->process_services_changed(services_removed, services_changed);
+        updated_services = self->services_;
+        callback = self->services_changed_cb_;
+    }
+    if (callback) {
+        callback(updated_services);
+    }
 }
 
 void Manager::onTechnologiesChanged(OnTechListChangedCallback callback) {
