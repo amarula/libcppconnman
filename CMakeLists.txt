@@ -6,7 +6,7 @@ option(BUILD_CONNMAN "Build Connman Proxy" OFF)
 
 project(
   GDbusCpp
-  VERSION 1.0.0
+  VERSION 2.0.0
   DESCRIPTION ""
   LANGUAGES C CXX)
 
