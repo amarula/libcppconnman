@@ -198,6 +198,29 @@ void Manager::setup_agent() {
         }
         return g_variant_builder_end(&builder);
     });
+
+    agent_->set_report_error_handler(
+        [this](const gchar* service_path, const gchar* error) -> bool {
+            std::shared_ptr<Service> found_service;
+            OnReportErrorCallback callback;
+            {
+                std::lock_guard<std::mutex> const lock(mtx_);
+                auto service_it = std::ranges::find_if(
+                    services_, [&service_path](const auto& service) {
+                        return service->objPath() == service_path;
+                    });
+                if (service_it != services_.end()) {
+                    found_service = *service_it;
+                }
+                callback = report_error_cb_;
+            }
+
+            if (!found_service || callback == nullptr) {
+                return false;
+            }
+
+            return callback(found_service, error);
+        });
 }
 
 void Manager::setOfflineMode(bool offline_mode,
