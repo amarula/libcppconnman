@@ -172,13 +172,19 @@ void Agent::dispatch_method_call(GDBusMethodInvocation *invocation,
         return;
     }
 
-    if (g_strcmp0(method_name, "Cancel") == 0 && cancel_cb_) {
-        cancel_cb_();
+    if (g_strcmp0(method_name, "Cancel") == 0) {
+        if (cancel_cb_) {
+            cancel_cb_();
+        }
+        g_dbus_method_invocation_return_value(invocation, nullptr);
         return;
     }
 
-    if (g_strcmp0(method_name, "Release") == 0 && release_cb_) {
-        release_cb_();
+    if (g_strcmp0(method_name, "Release") == 0) {
+        if (release_cb_) {
+            release_cb_();
+        }
+        g_dbus_method_invocation_return_value(invocation, nullptr);
         return;
     }
 
