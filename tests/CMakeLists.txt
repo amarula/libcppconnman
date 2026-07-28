@@ -19,7 +19,7 @@ install(
 
 if(BUILD_CONNMAN)
   foreach(connman_test gconnman_clock_test gconnman_tech_test
-                       gconnman_serv_test)
+                       gconnman_serv_test gconnman_agent_test)
     add_executable(${connman_test} ${connman_test}.cpp thread_bundle.hpp
                                    logging_init.cpp)
     target_link_libraries(${connman_test} PRIVATE GConnmanDbus gtest_main)
