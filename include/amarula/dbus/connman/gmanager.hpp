@@ -75,6 +75,21 @@ class Manager : public DBusProxy<ManaProperties> {
     using OnRequestInputWISPrEnabledCallback =
         std::function<std::pair<std::string, std::string>(
             std::shared_ptr<Service>)>;
+    /*
+     * Called when connman reports that a connection attempt failed, with the
+     * connman error string ("invalid-key", "connect-failed", ...). Return true
+     * to have connman retry with the credentials it already has.
+     *
+     * connman holds the pending Service.Connect() reply until this returns, so
+     * the callback runs on the D-Bus dispatch thread and must not block.
+     *
+     * The retry budget belongs to this callback: connman reconnects
+     * immediately, with no backoff and no attempt limit of its own, so a
+     * callback that always returns true against a service that keeps failing
+     * retries forever. Count the attempts and return false once you give up.
+     */
+    using OnReportErrorCallback =
+        std::function<bool(std::shared_ptr<Service>, const std::string& error)>;
     using OnTechnologiesChangedCallback =
         std::function<void(const Manager::ProxyList<Technology>&)>;
     using OnServicesChangedCallback =
@@ -111,6 +126,11 @@ class Manager : public DBusProxy<ManaProperties> {
         OnRequestInputWISPrEnabledCallback callback) {
         std::lock_guard<std::mutex> const lock(mtx_);
         request_input_wispr_enabled_cb_ = std::move(callback);
+    }
+
+    void onReportError(OnReportErrorCallback callback) {
+        std::lock_guard<std::mutex> const lock(mtx_);
+        report_error_cb_ = std::move(callback);
     }
 
     void registerAgent(const std::string& object_path,
@@ -151,6 +171,7 @@ class Manager : public DBusProxy<ManaProperties> {
         request_input_hidden_network_name_cb_;
     OnRequestInputWPAEnterpriseCallback request_input_wpa_enterprise_cb_;
     OnRequestInputWISPrEnabledCallback request_input_wispr_enabled_cb_;
+    OnReportErrorCallback report_error_cb_;
     OnTechnologiesChangedCallback technologies_changed_cb_{
         [](const Manager::ProxyList<Technology>&) {}};
     OnServicesChangedCallback services_changed_cb_{
