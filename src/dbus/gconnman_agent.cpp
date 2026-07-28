@@ -189,19 +189,39 @@ void Agent::dispatch_method_call(GDBusMethodInvocation *invocation,
     }
 
     if (g_strcmp0(method_name, "ReportError") == 0) {
-        const gchar *service = nullptr;
-        const gchar *error_str = nullptr;
-
         GVariant *child_service = g_variant_get_child_value(parameters, 0);
         GVariant *child_error = g_variant_get_child_value(parameters, 1);
 
-        service = g_variant_get_string(child_service, nullptr);
-        error_str = g_variant_get_string(child_error, nullptr);
-
-        LCM_LOG("ReportError:" << service << " " << error_str << '\n');
+        std::string const service(g_variant_get_string(child_service, nullptr));
+        std::string const error_str(g_variant_get_string(child_error, nullptr));
 
         g_variant_unref(child_service);
         g_variant_unref(child_error);
+
+        LCM_LOG("ReportError:" << service << " " << error_str << '\n');
+
+        /*
+         * connman holds the pending Service.Connect() reply until this call is
+         * answered, so the invocation must always be completed - otherwise the
+         * caller only gets an answer when its own D-Bus reply timeout expires.
+         * Replying net.connman.Agent.Error.Retry makes connman reconnect using
+         * the credentials it already has, without asking for them again.
+         */
+        bool retry = false;
+        if (report_error_cb_) {
+            try {
+                retry = report_error_cb_(service.c_str(), error_str.c_str());
+            } catch (...) {
+                LCM_LOG("Exception in ReportError callback");
+            }
+        }
+
+        if (retry) {
+            g_dbus_method_invocation_return_dbus_error(
+                invocation, "net.connman.Agent.Error.Retry", "Retry");
+        } else {
+            g_dbus_method_invocation_return_value(invocation, nullptr);
+        }
 
         return;
     }

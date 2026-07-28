@@ -22,8 +22,19 @@ class Agent {
         std::function<GVariant *(const gchar *service, GVariant *fields)>;
     using CancelCallback = std::function<void()>;
     using ReleaseCallback = std::function<void()>;
+    /*
+     * Returning true asks connman to retry the connection with the credentials
+     * it already has, by replying net.connman.Agent.Error.Retry. The callback
+     * runs on the D-Bus dispatch thread while connman waits for the reply, so
+     * it must not block.
+     *
+     * The retry budget belongs to this callback: connman reconnects
+     * immediately, with no backoff and no attempt limit of its own, so a
+     * callback that always returns true against a service that keeps failing
+     * retries forever. Count the attempts and return false once you give up.
+     */
     using ReportErrorCallback =
-        std::function<void(const gchar *service, const gchar *error)>;
+        std::function<bool(const gchar *service, const gchar *error)>;
 
     void set_request_input_handler(RequestInputCallback callback) {
         request_input_cb_ = std::move(callback);
@@ -37,9 +48,14 @@ class Agent {
         release_cb_ = std::move(callback);
     }
 
+    void set_report_error_handler(ReportErrorCallback callback) {
+        report_error_cb_ = std::move(callback);
+    }
+
     RequestInputCallback request_input_cb_;
     CancelCallback cancel_cb_;
     ReleaseCallback release_cb_;
+    ReportErrorCallback report_error_cb_;
 
     static void on_method_call(GDBusConnection *connection, const gchar *sender,
                                const gchar *object_path,
