@@ -9,8 +9,33 @@ set(BUILD_SHARED_LIBS OFF)
 FetchContent_MakeAvailable(googletest)
 include(GoogleTest)
 
+function(add_valgrind_wrapper test_name)
+  set(TEST_NAME "${test_name}")
+
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valgrind_test.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_valgrind @ONLY)
+
+  file(
+    CHMOD
+    ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_valgrind
+    PERMISSIONS
+    OWNER_READ
+    OWNER_WRITE
+    OWNER_EXECUTE
+    GROUP_READ
+    GROUP_EXECUTE
+    WORLD_READ
+    WORLD_EXECUTE)
+
+  install(
+    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_valgrind
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT ${PROJECT_NAME}-dev)
+endfunction()
+
 add_executable(gdbusproxypp_test gdbusproxypp_test.cpp)
 target_link_libraries(gdbusproxypp_test PRIVATE GDbusProxy gtest_main)
+add_valgrind_wrapper(gdbusproxypp_test)
 
 install(
   TARGETS gdbusproxypp_test
@@ -31,6 +56,7 @@ if(BUILD_CONNMAN)
       TARGETS ${connman_test}
       EXPORT ${PROJECT_NAME}-config
       COMPONENT ${PROJECT_NAME}-dev)
+    add_valgrind_wrapper(${connman_test})
   endforeach()
 
 endif(BUILD_CONNMAN)
