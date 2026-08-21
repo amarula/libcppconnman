@@ -17,24 +17,33 @@ TEST(Connman, getTechs) {
         Connman connman;
         const auto manager = connman.manager();
 
-        manager->onTechnologiesChanged(
-            [&called, main_tid = thread_bundle.main_tid,
-             loop_tid = thread_bundle.loop_tid](const auto& technologies) {
-                called = true;
+        auto do_on_techs = [&called, main_tid = thread_bundle.main_tid,
+                            loop_tid = thread_bundle.loop_tid](
+                               const auto& technologies,
+                               const bool check_thread_id = true) {
+            called = true;
+            if (check_thread_id) {
                 const auto callback_tid = std::this_thread::get_id();
                 EXPECT_NE(callback_tid, main_tid);
                 EXPECT_NE(callback_tid, loop_tid);
-                ASSERT_FALSE(technologies.empty());
-                for (const auto& tech : technologies) {
-                    const auto props = tech->properties();
-                    EXPECT_FALSE(props.getName().empty());
-                    if (props.isConnected()) {
-                        EXPECT_TRUE(props.isPowered())
-                            << "Technology is connected but not powered";
-                    }
-                    std::cout << props;
+            }
+            ASSERT_FALSE(technologies.empty()) << "No technologies returned";
+            for (const auto& tech : technologies) {
+                const auto props = tech->properties();
+                EXPECT_FALSE(props.getName().empty());
+                if (props.isConnected()) {
+                    EXPECT_TRUE(props.isPowered())
+                        << "Technology is connected but not powered";
                 }
-            });
+                std::cout << props;
+            }
+        };
+
+        if (manager->technologies().empty()) {
+            manager->onTechnologiesChanged(do_on_techs);
+        } else {
+            do_on_techs(manager->technologies(), false);
+        }
     }
     ASSERT_TRUE(called) << "TechnologiesChanged callback was never called";
 }
@@ -47,14 +56,16 @@ TEST(Connman, PowerOnAllTechnologies) {
         Connman connman;
         const auto manager = connman.manager();
 
-        manager->onTechnologiesChanged([&called,
-                                        main_tid = thread_bundle.main_tid,
-                                        loop_tid = thread_bundle.loop_tid](
-                                           const auto& technologies) {
-            const auto callback_tid = std::this_thread::get_id();
-            EXPECT_NE(callback_tid, main_tid);
-            EXPECT_NE(callback_tid, loop_tid);
-            ASSERT_FALSE(technologies.empty());
+        auto do_on_techs = [&called, main_tid = thread_bundle.main_tid,
+                            loop_tid = thread_bundle.loop_tid](
+                               const auto& technologies,
+                               const bool check_thread_id = true) {
+            if (check_thread_id) {
+                const auto callback_tid = std::this_thread::get_id();
+                EXPECT_NE(callback_tid, main_tid);
+                EXPECT_NE(callback_tid, loop_tid);
+            }
+            ASSERT_FALSE(technologies.empty()) << "No technologies returned";
             // Power on all technologies
             for (const auto& tech : technologies) {
                 tech->onPropertyChanged([main_tid, loop_tid](const auto& prop) {
@@ -85,7 +96,12 @@ TEST(Connman, PowerOnAllTechnologies) {
                     });
                 }
             }
-        });
+        };
+        if (manager->technologies().empty()) {
+            manager->onTechnologiesChanged(do_on_techs);
+        } else {
+            do_on_techs(manager->technologies(), false);
+        }
     }
     ASSERT_TRUE(called) << "setPowered callback was never called";
 }
@@ -97,32 +113,42 @@ TEST(Connman, ScanWifiTechnology) {
         Connman connman;
         const auto manager = connman.manager();
 
-        manager->onTechnologiesChanged(
-            [&called, main_tid = thread_bundle.main_tid,
-             loop_tid = thread_bundle.loop_tid](const auto& technologies) {
-                ASSERT_FALSE(technologies.empty())
-                    << "No technologies returned";
+        auto do_on_techs = [&called, main_tid = thread_bundle.main_tid,
+                            loop_tid = thread_bundle.loop_tid](
+                               const auto& technologies,
+                               const bool check_thread_id = true) {
+            if (check_thread_id) {
+                const auto callback_tid = std::this_thread::get_id();
+                EXPECT_NE(callback_tid, main_tid);
+                EXPECT_NE(callback_tid, loop_tid);
+            }
+            ASSERT_FALSE(technologies.empty()) << "No technologies returned";
 
-                for (const auto& tech : technologies) {
-                    const auto props = tech->properties();
-                    const auto name = props.getName();
-                    if (props.getType() == Type::Wifi) {
-                        std::cout << "Scanning technology with name: " << name
-                                  << "\n";
-                        tech->scan(
-                            [&called, name, main_tid, loop_tid](bool success) {
-                                const auto callback_tid =
-                                    std::this_thread::get_id();
-                                EXPECT_NE(callback_tid, main_tid);
-                                EXPECT_NE(callback_tid, loop_tid);
-                                called = true;
-                                EXPECT_TRUE(success);
-                                std::cout << "Technology " << name
-                                          << " scanned successfully.\n";
-                            });
-                    }
+            for (const auto& tech : technologies) {
+                const auto props = tech->properties();
+                const auto name = props.getName();
+                if (props.getType() == Type::Wifi) {
+                    std::cout << "Scanning technology with name: " << name
+                              << "\n";
+                    tech->scan([&called, name, main_tid,
+                                loop_tid](bool success) {
+                        const auto callback_tid = std::this_thread::get_id();
+                        EXPECT_NE(callback_tid, main_tid);
+                        EXPECT_NE(callback_tid, loop_tid);
+                        called = true;
+                        EXPECT_TRUE(success);
+                        std::cout << "Technology " << name
+                                  << " scanned successfully.\n";
+                    });
                 }
-            });
+            }
+        };
+
+        if (manager->technologies().empty()) {
+            manager->onTechnologiesChanged(do_on_techs);
+        } else {
+            do_on_techs(manager->technologies(), false);
+        }
     }
     ASSERT_TRUE(called) << "TechnologiesChanged callback was never called";
 }
@@ -134,66 +160,75 @@ TEST(Connman, SetTetheringOn) {
         Connman connman;
         const auto manager = connman.manager();
 
-        manager->onTechnologiesChanged(
-            [&called, main_tid = thread_bundle.main_tid,
-             loop_tid = thread_bundle.loop_tid](const auto& technologies) {
-                ASSERT_FALSE(technologies.empty())
-                    << "No technologies returned";
+        auto do_on_techs = [&called, main_tid = thread_bundle.main_tid,
+                            loop_tid = thread_bundle.loop_tid](
+                               const auto& technologies,
+                               const bool check_thread_id = true) {
+            if (check_thread_id) {
+                const auto callback_tid = std::this_thread::get_id();
+                EXPECT_NE(callback_tid, main_tid);
+                EXPECT_NE(callback_tid, loop_tid);
+            }
+            ASSERT_FALSE(technologies.empty()) << "No technologies returned";
 
-                for (const auto& tech : technologies) {
-                    const auto props = tech->properties();
-                    const auto name = props.getName();
+            for (const auto& tech : technologies) {
+                const auto props = tech->properties();
+                const auto name = props.getName();
 
-                    if (props.getType() == Type::Wifi) {  // test only wifi
-                        std::cout << "Setting tethering properties for " << name
-                                  << "\n";
-                        tech->setTetheringIdentifier(
-                            "AmarulaTestSSID",
-                            [name, main_tid, loop_tid](bool success) {
-                                const auto callback_tid =
-                                    std::this_thread::get_id();
-                                EXPECT_NE(callback_tid, main_tid);
-                                EXPECT_NE(callback_tid, loop_tid);
-                                EXPECT_TRUE(success)
-                                    << "Failed to set tethering identifier for "
-                                    << name;
-                            });
-                        tech->setTetheringPassphrase(
-                            "AmarulaTestPassphrase",
-                            [name, main_tid, loop_tid](bool success) {
-                                const auto callback_tid =
-                                    std::this_thread::get_id();
-                                EXPECT_NE(callback_tid, main_tid);
-                                EXPECT_NE(callback_tid, loop_tid);
-                                EXPECT_TRUE(success)
-                                    << "Failed to set tethering passphrase for "
-                                    << name;
-                            });
-
-                        tech->setTetheringFreq(
-                            WIFI_FREQ_2412_MHZ,
-                            [name, main_tid, loop_tid](bool success) {
-                                const auto callback_tid =
-                                    std::this_thread::get_id();
-                                EXPECT_NE(callback_tid, main_tid);
-                                EXPECT_NE(callback_tid, loop_tid);
-                                EXPECT_TRUE(success)
-                                    << "Failed to set tethering frequency for "
-                                    << name;
-                            });
-                        tech->setTethering(true, [&called, name, main_tid,
-                                                  loop_tid](bool success) {
+                if (props.getType() == Type::Wifi) {  // test only wifi
+                    std::cout << "Setting tethering properties for " << name
+                              << "\n";
+                    tech->setTetheringIdentifier(
+                        "AmarulaTestSSID",
+                        [name, main_tid, loop_tid](bool success) {
                             const auto callback_tid =
                                 std::this_thread::get_id();
                             EXPECT_NE(callback_tid, main_tid);
                             EXPECT_NE(callback_tid, loop_tid);
                             EXPECT_TRUE(success)
-                                << "Failed to set tethering for " << name;
-                            called = true;
+                                << "Failed to set tethering identifier for "
+                                << name;
                         });
-                    }
+                    tech->setTetheringPassphrase(
+                        "AmarulaTestPassphrase",
+                        [name, main_tid, loop_tid](bool success) {
+                            const auto callback_tid =
+                                std::this_thread::get_id();
+                            EXPECT_NE(callback_tid, main_tid);
+                            EXPECT_NE(callback_tid, loop_tid);
+                            EXPECT_TRUE(success)
+                                << "Failed to set tethering passphrase for "
+                                << name;
+                        });
+
+                    tech->setTetheringFreq(
+                        WIFI_FREQ_2412_MHZ,
+                        [name, main_tid, loop_tid](bool success) {
+                            const auto callback_tid =
+                                std::this_thread::get_id();
+                            EXPECT_NE(callback_tid, main_tid);
+                            EXPECT_NE(callback_tid, loop_tid);
+                            EXPECT_TRUE(success)
+                                << "Failed to set tethering frequency for "
+                                << name;
+                        });
+                    tech->setTethering(true, [&called, name, main_tid,
+                                              loop_tid](bool success) {
+                        const auto callback_tid = std::this_thread::get_id();
+                        EXPECT_NE(callback_tid, main_tid);
+                        EXPECT_NE(callback_tid, loop_tid);
+                        EXPECT_TRUE(success)
+                            << "Failed to set tethering for " << name;
+                        called = true;
+                    });
                 }
-            });
+            }
+        };
+        if (manager->technologies().empty()) {
+            manager->onTechnologiesChanged(do_on_techs);
+        } else {
+            do_on_techs(manager->technologies(), false);
+        }
     }
     ASSERT_TRUE(called) << "setTethering callback was never called";
 }
@@ -205,31 +240,40 @@ TEST(Connman, SetTetheringOff) {
         Connman connman;
         const auto manager = connman.manager();
 
-        manager->onTechnologiesChanged(
-            [&called, main_tid = thread_bundle.main_tid,
-             loop_tid = thread_bundle.loop_tid](const auto& technologies) {
-                ASSERT_FALSE(technologies.empty())
-                    << "No technologies returned";
+        auto do_on_techs = [&called, main_tid = thread_bundle.main_tid,
+                            loop_tid = thread_bundle.loop_tid](
+                               const auto& technologies,
+                               const bool check_thread_id = true) {
+            if (check_thread_id) {
+                const auto callback_tid = std::this_thread::get_id();
+                EXPECT_NE(callback_tid, main_tid);
+                EXPECT_NE(callback_tid, loop_tid);
+            }
+            ASSERT_FALSE(technologies.empty()) << "No technologies returned";
 
-                for (const auto& tech : technologies) {
-                    const auto props = tech->properties();
-                    const auto name = props.getName();
+            for (const auto& tech : technologies) {
+                const auto props = tech->properties();
+                const auto name = props.getName();
 
-                    if (props.getType() == Type::Wifi) {  // test only wifi
-                        std::cout << "Disable tethering for " << name << "\n";
-                        tech->setTethering(false, [&called, name, main_tid,
-                                                   loop_tid](bool success) {
-                            const auto callback_tid =
-                                std::this_thread::get_id();
-                            EXPECT_NE(callback_tid, main_tid);
-                            EXPECT_NE(callback_tid, loop_tid);
-                            EXPECT_TRUE(success)
-                                << "Failed to unset tethering for " << name;
-                            called = true;
-                        });
-                    }
+                if (props.getType() == Type::Wifi) {  // test only wifi
+                    std::cout << "Disable tethering for " << name << "\n";
+                    tech->setTethering(false, [&called, name, main_tid,
+                                               loop_tid](bool success) {
+                        const auto callback_tid = std::this_thread::get_id();
+                        EXPECT_NE(callback_tid, main_tid);
+                        EXPECT_NE(callback_tid, loop_tid);
+                        EXPECT_TRUE(success)
+                            << "Failed to unset tethering for " << name;
+                        called = true;
+                    });
                 }
-            });
+            }
+        };
+        if (manager->technologies().empty()) {
+            manager->onTechnologiesChanged(do_on_techs);
+        } else {
+            do_on_techs(manager->technologies(), false);
+        }
     }
     ASSERT_TRUE(called) << "setTethering callback was never called";
 }
@@ -237,12 +281,20 @@ TEST(Connman, SetTetheringOff) {
 TEST(Connman, PowerOffAllTechnologies) {
     bool called = false;
     {
+        const ThreadBundle thread_bundle;
         Connman connman;
         const auto manager = connman.manager();
 
-        manager->onTechnologiesChanged([&](const auto& technologies) {
+        auto do_on_techs = [&called, main_tid = thread_bundle.main_tid,
+                            loop_tid = thread_bundle.loop_tid](
+                               const auto& technologies,
+                               const bool check_thread_id = true) {
+            if (check_thread_id) {
+                const auto callback_tid = std::this_thread::get_id();
+                EXPECT_NE(callback_tid, main_tid);
+                EXPECT_NE(callback_tid, loop_tid);
+            }
             ASSERT_FALSE(technologies.empty()) << "No technologies returned";
-
             // Power off all technologies
             for (const auto& tech : technologies) {
                 tech->onPropertyChanged([&](const auto& prop) {
@@ -266,7 +318,13 @@ TEST(Connman, PowerOffAllTechnologies) {
                     });
                 }
             }
-        });
+        };
+
+        if (manager->technologies().empty()) {
+            manager->onTechnologiesChanged(do_on_techs);
+        } else {
+            do_on_techs(manager->technologies(), false);
+        }
     }
     ASSERT_TRUE(called) << "setPowered callback was never called";
 }
