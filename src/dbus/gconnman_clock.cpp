@@ -98,10 +98,13 @@ void Clock::setTimeServers(const std::vector<std::string>& servers,
 
 auto operator<<(std::ostream& ost,
                 const ClockProperties& obj) -> std::ostream& {
-    ost << TIME_STR << ": " << obj.time_ << " (";
+    ost << TIME_STR << ": " << obj.time_;
     const auto time_value = static_cast<std::time_t>(obj.time_);
-    ost << std::put_time(std::localtime(&time_value), "%Y-%m-%d %H:%M:%S")
-        << ")\n";
+    std::tm local_time{};
+    if (localtime_r(&time_value, &local_time) != nullptr) {
+        ost << " (" << std::put_time(&local_time, "%Y-%m-%d %H:%M:%S") << ")";
+    }
+    ost << '\n';
     ost << TIMEUPDATES_STR << ": "
         << TIME_UPDATE_MAP.toString(obj.time_updates_) << '\n';
     ost << TIMEZONE_STR << ": " << obj.timezone_ << '\n';
