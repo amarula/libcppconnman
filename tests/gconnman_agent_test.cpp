@@ -32,8 +32,8 @@ constexpr const char* AGENT_INTERFACE = "net.connman.Agent";
 constexpr const char* RETRY_ERROR = "net.connman.Agent.Error.Retry";
 
 auto call_agent(GDBusConnection* bus, const std::string& path,
-                const gchar* method, GVariant* args, GError** error)
-    -> GVariant* {
+                const gchar* method, GVariant* args,
+                GError** error) -> GVariant* {
     return g_dbus_connection_call_sync(
         bus, g_dbus_connection_get_unique_name(bus), path.c_str(),
         AGENT_INTERFACE, method, args, nullptr, G_DBUS_CALL_FLAGS_NONE,
@@ -94,10 +94,12 @@ TEST(ConnmanAgent, ReportErrorIsAnswered) {
                    g_variant_new("(os)", "/net/connman/service/does_not_exist",
                                  "invalid-key"),
                    &error);
+    std::unique_ptr<GError, decltype(&g_error_free)> error_guard{error,
+                                                                 &g_error_free};
 
     ASSERT_NE(reply, nullptr)
         << "ReportError was not answered within " << CALL_TIMEOUT_MS
-        << "ms: " << (error != nullptr ? error->message : "");
+        << "ms: " << (error_guard != nullptr ? error_guard->message : "");
     g_variant_unref(reply);
 }
 
@@ -204,9 +206,11 @@ TEST(ConnmanAgent, CancelIsAnswered) {
     GError* error = nullptr;
     GVariant* reply = call_agent(bus, manager->internalAgentPath(), "Cancel",
                                  nullptr, &error);
+    std::unique_ptr<GError, decltype(&g_error_free)> error_guard{error,
+                                                                 &g_error_free};
 
     ASSERT_NE(reply, nullptr)
         << "Cancel was not answered within " << CALL_TIMEOUT_MS
-        << "ms: " << (error != nullptr ? error->message : "");
+        << "ms: " << (error_guard != nullptr ? error_guard->message : "");
     g_variant_unref(reply);
 }
