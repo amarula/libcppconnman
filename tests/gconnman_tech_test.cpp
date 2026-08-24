@@ -68,19 +68,24 @@ TEST(Connman, PowerOnAllTechnologies) {
             ASSERT_FALSE(technologies.empty()) << "No technologies returned";
             // Power on all technologies
             for (const auto& tech : technologies) {
-                tech->onPropertyChanged([main_tid, loop_tid](const auto& prop) {
-                    EXPECT_TRUE(prop.isPowered())
-                        << "Technology " << prop.getName()
-                        << " was not powered ON";
-                    const auto callback_tid = std::this_thread::get_id();
-                    EXPECT_NE(callback_tid, main_tid);
-                    EXPECT_NE(callback_tid, loop_tid);
-                    std::cout << "onPropertyChanged:\n";
-                    std::cout << prop;
-                });
-                const auto prop = tech->properties();
-                const auto name = prop.getName();
-                if (!prop.isPowered()) {
+                const auto is_powered = tech->properties().isPowered();
+                tech->onPropertyChanged(
+                    [main_tid, loop_tid, is_powered](const auto& prop) {
+                        // If the powered state changed, check that it is now
+                        // powered on
+                        if (is_powered != prop.isPowered()) {
+                            EXPECT_TRUE(prop.isPowered())
+                                << "Technology " << prop.getName()
+                                << " was not powered ON";
+                        }
+                        const auto callback_tid = std::this_thread::get_id();
+                        EXPECT_NE(callback_tid, main_tid);
+                        EXPECT_NE(callback_tid, loop_tid);
+                        std::cout << "onPropertyChanged:\n";
+                        std::cout << prop;
+                    });
+                const auto name = tech->properties().getName();
+                if (!is_powered) {
                     std::cout << "Powering on technology: " << name << '\n';
                     tech->setPowered(true, [&called, name, main_tid,
                                             loop_tid](auto success) {
@@ -297,18 +302,21 @@ TEST(Connman, PowerOffAllTechnologies) {
             ASSERT_FALSE(technologies.empty()) << "No technologies returned";
             // Power off all technologies
             for (const auto& tech : technologies) {
-                tech->onPropertyChanged([&](const auto& prop) {
-                    EXPECT_FALSE(prop.isPowered())
-                        << "Technology " << prop.getName()
-                        << " was not powered OFF";
+                const auto is_powered = tech->properties().isPowered();
+                tech->onPropertyChanged([is_powered](const auto& prop) {
+                    // If the powered state changed, check that it is now
+                    // powered off
+                    if (is_powered != prop.isPowered()) {
+                        EXPECT_FALSE(prop.isPowered())
+                            << "Technology " << prop.getName()
+                            << " was not powered OFF";
+                    }
                     std::cout << "onPropertyChanged:\n";
                     std::cout << prop;
                 });
-                const auto prop = tech->properties();
-                const auto name = prop.getName();
-                if (prop.isPowered()) {
-                    std::cout << "Powering off technology: " << prop.getName()
-                              << '\n';
+                const auto name = tech->properties().getName();
+                if (is_powered) {
+                    std::cout << "Powering off technology: " << name << '\n';
                     tech->setPowered(false, [&, name](auto success) {
                         std::cout << "setPowered callback for " << name << ": "
                                   << (success ? "Success" : "Failure") << '\n';
