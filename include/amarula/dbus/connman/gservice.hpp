@@ -12,6 +12,8 @@ namespace Amarula::DBus::G::Connman {
 class Manager;
 struct ServProperties;
 
+using VariantPtr = std::unique_ptr<GVariant, decltype(&g_variant_unref)>;
+
 class GVariantParser {
    public:
     GVariantParser() = default;
@@ -26,6 +28,9 @@ class GVariantParser {
     void parse(GVariant* variant);
 
     virtual void update(const gchar* /*key*/, GVariant* /*value*/) {};
+    [[nodiscard]] virtual auto getVariant() const -> VariantPtr {
+        return {nullptr, &g_variant_unref};
+    }
 };
 
 class IPv4 : public GVariantParser {
@@ -36,6 +41,9 @@ class IPv4 : public GVariantParser {
         Manual,
         Auto,
     };
+
+    explicit IPv4(IPv4::Method method, std::string address = "",
+                  std::string netmask = "", std::string gateway = "");
 
     friend auto operator<<(std::ostream& ostr,
                            const IPv4& object) -> std::ostream&;
@@ -52,8 +60,10 @@ class IPv4 : public GVariantParser {
     std::string gateway_;
     explicit IPv4(GVariant* variant) { parse(variant); };
     void update(const gchar* key, GVariant* value) override;
+    [[nodiscard]] auto getVariant() const -> VariantPtr override;
 
     friend class ServProperties;
+    friend class Service;
 };
 
 struct IPv6 : public GVariantParser {
@@ -204,6 +214,9 @@ struct ServProperties {
     [[nodiscard]] auto isImmutable() const { return immutable_; }
     [[nodiscard]] auto isRoaming() const { return roaming_; }
     [[nodiscard]] auto getIPv4() const { return ipv4_; }
+    [[nodiscard]] auto getIPv4Configuration() const {
+        return ipv4_configuration_;
+    }
     [[nodiscard]] auto getIPv6() const { return ipv6_; }
     [[nodiscard]] auto getEthernet() const { return ethernet_; }
     [[nodiscard]] auto getProvider() const { return provider_; }
@@ -230,6 +243,7 @@ struct ServProperties {
     bool roaming_{false};
     uint8_t strength_{0U};
     std::optional<IPv4> ipv4_{std::nullopt};
+    std::optional<IPv4> ipv4_configuration_{std::nullopt};
     std::optional<IPv6> ipv6_{std::nullopt};
     std::optional<Ethernet> ethernet_{std::nullopt};
     std::optional<Provider> provider_{std::nullopt};
@@ -255,6 +269,8 @@ class Service : public DBusProxy<ServProperties> {
                         PropertiesSetCallback callback = nullptr);
     void setNameServers(const std::vector<std::string>& name_servers,
                         PropertiesSetCallback callback = nullptr);
+    void setIPv4(const IPv4& ipv4_configuration,
+                 PropertiesSetCallback callback = nullptr);
     friend class Manager;
 };
 
