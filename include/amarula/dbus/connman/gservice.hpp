@@ -76,6 +76,10 @@ struct IPv6 : public GVariantParser {
         Auto,
     };
     enum class Privacy : uint8_t { Disabled = 0, Enabled, Preferred };
+
+    explicit IPv6(IPv6::Method method, std::string address = "",
+                  uint8_t prefix_length = 0U, std::string gateway = "",
+                  IPv6::Privacy privacy = IPv6::Privacy::Disabled);
     friend auto operator<<(std::ostream& ostr,
                            const IPv6& object) -> std::ostream&;
     [[nodiscard]] auto getMethod() const { return method_; }
@@ -92,8 +96,10 @@ struct IPv6 : public GVariantParser {
     uint8_t prefix_length_{0U};
     explicit IPv6(GVariant* variant) { parse(variant); };
     void update(const gchar* key, GVariant* value) override;
+    [[nodiscard]] auto getVariant() const -> VariantPtr override;
 
     friend class ServProperties;
+    friend class Service;
 };
 
 struct Ethernet : public GVariantParser {
@@ -218,6 +224,9 @@ struct ServProperties {
         return ipv4_configuration_;
     }
     [[nodiscard]] auto getIPv6() const { return ipv6_; }
+    [[nodiscard]] auto getIPv6Configuration() const {
+        return ipv6_configuration_;
+    }
     [[nodiscard]] auto getEthernet() const { return ethernet_; }
     [[nodiscard]] auto getProvider() const { return provider_; }
     [[nodiscard]] auto getProxy() const { return proxy_; }
@@ -245,6 +254,7 @@ struct ServProperties {
     std::optional<IPv4> ipv4_{std::nullopt};
     std::optional<IPv4> ipv4_configuration_{std::nullopt};
     std::optional<IPv6> ipv6_{std::nullopt};
+    std::optional<IPv6> ipv6_configuration_{std::nullopt};
     std::optional<Ethernet> ethernet_{std::nullopt};
     std::optional<Provider> provider_{std::nullopt};
     std::optional<Proxy> proxy_{std::nullopt};
@@ -270,6 +280,8 @@ class Service : public DBusProxy<ServProperties> {
     void setNameServers(const std::vector<std::string>& name_servers,
                         PropertiesSetCallback callback = nullptr);
     void setIPv4(const IPv4& ipv4_configuration,
+                 PropertiesSetCallback callback = nullptr);
+    void setIPv6(const IPv6& ipv6_configuration,
                  PropertiesSetCallback callback = nullptr);
     friend class Manager;
 };

@@ -63,6 +63,7 @@ constexpr auto INTERFACE_STR = "Interface";
 constexpr auto MTU_STR = "MTU";
 constexpr auto NAMESERVERS_CONFIGURATION_STR = "Nameservers.Configuration";
 constexpr auto IPV4_CONFIGURATION_STR = "IPv4.Configuration";
+constexpr auto IPV6_CONFIGURATION_STR = "IPv6.Configuration";
 
 // Manager interface
 constexpr auto MANAGER_INTERFACE = "net.connman.Manager";

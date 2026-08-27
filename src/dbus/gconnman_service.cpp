@@ -81,8 +81,8 @@ static constexpr EnumStringMap<IPv6::Method, 5> IPV6_METHOD_MAP{
 static constexpr EnumStringMap<IPv6::Privacy, 4> IPV6_PRIVACY_MAP{
     {{{IPv6::Privacy::Disabled, "disabled"},
       {IPv6::Privacy::Enabled, "enabled"},
-      {IPv6::Privacy::Preferred, "preferred"},
-      {IPv6::Privacy::Preferred, "prefered"}}}};
+      {IPv6::Privacy::Preferred, "prefered"},
+      {IPv6::Privacy::Preferred, "preferred"}}}};
 
 Service::Service(DBus* dbus, const gchar* obj_path)
     : DBusProxy(dbus, SERVICE, obj_path, SERVICE_INTERFACE) {}
@@ -174,6 +174,22 @@ auto IPv4::getVariant() const -> VariantPtr {
                       &g_variant_unref};
 }
 
+IPv6::IPv6(const IPv6::Method method, std::string address,
+           uint8_t prefix_length, std::string gateway,
+           const IPv6::Privacy privacy)
+    : method_(method),
+      address_(std::move(address)),
+      gateway_(std::move(gateway)),
+      privacy_(privacy),
+      prefix_length_(prefix_length) {}
+
+void Service::setIPv6(const IPv6& ipv6_configuration,
+                      PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    setProperty(IPV6_CONFIGURATION_STR, ipv6_configuration.getVariant().get(),
+                nullptr, &Service::finishAsyncCall, data.release());
+}
+
 void IPv6::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, METHOD_STR) == 0U) {
         method_ =
@@ -190,6 +206,34 @@ void IPv6::update(const gchar* key, GVariant* value) {
     } else {
         LCM_LOG("Unknown property for IPv6: " << key << '\n');
     }
+}
+
+auto IPv6::getVariant() const -> VariantPtr {
+    GVariantBuilder builder;
+    g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
+    g_variant_builder_add(
+        &builder, "{sv}", METHOD_STR,
+        g_variant_new_string(
+            std::string(IPV6_METHOD_MAP.toString(method_)).c_str()));
+    if (!address_.empty()) {
+        g_variant_builder_add(&builder, "{sv}", ADDRESS_STR,
+                              g_variant_new_string(address_.c_str()));
+    }
+    if (prefix_length_ != 0U) {
+        g_variant_builder_add(&builder, "{sv}", PREFIXLENGTH_STR,
+                              g_variant_new_byte(prefix_length_));
+    }
+    if (!gateway_.empty()) {
+        g_variant_builder_add(&builder, "{sv}", GATEWAY_STR,
+                              g_variant_new_string(gateway_.c_str()));
+    }
+    g_variant_builder_add(
+        &builder, "{sv}", PRIVACY_STR,
+        g_variant_new_string(
+            std::string(IPV6_PRIVACY_MAP.toString(privacy_)).c_str()));
+
+    return VariantPtr{g_variant_ref_sink(g_variant_builder_end(&builder)),
+                      &g_variant_unref};
 }
 
 void GVariantParser::parse(GVariant* variant) {
@@ -287,6 +331,10 @@ void ServProperties::update(const gchar* key, GVariant* value) {
         ipv6_ = (g_variant_n_children(value) != 0)
                     ? std::optional<IPv6>(IPv6(value))
                     : std::nullopt;
+    } else if (g_strcmp0(key, IPV6_CONFIGURATION_STR) == 0U) {
+        ipv6_configuration_ = (g_variant_n_children(value) != 0)
+                                  ? std::optional<IPv6>(IPv6(value))
+                                  : std::nullopt;
     } else if (g_strcmp0(key, ETHERNET_STR) == 0U) {
         ethernet_ = (g_variant_n_children(value) != 0)
                         ? std::optional<Ethernet>(Ethernet(value))
@@ -395,6 +443,11 @@ auto operator<<(std::ostream& ost, const ServProperties& obj) -> std::ostream& {
 
     if (obj.ipv6_) {
         ost << obj.ipv6_.value();
+    }
+
+    if (obj.ipv6_configuration_) {
+        ost << "Configuration ";
+        ost << obj.ipv6_configuration_.value();
     }
 
     if (obj.ethernet_) {
