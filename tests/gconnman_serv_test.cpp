@@ -71,7 +71,7 @@ TEST(Connman, getServs) {
                 }
             });
     }
-    ASSERT_TRUE(called) << "TechnologiesChanged callback was never called";
+    ASSERT_TRUE(called) << "ServicesChanged callback was never called";
 }
 
 TEST(Connman, setNameServers) {
@@ -81,35 +81,47 @@ TEST(Connman, setNameServers) {
         const Connman connman;
         const auto manager = connman.manager();
 
-        manager->onServicesChanged([&called, main_tid = thread_bundle.main_tid,
-                                    loop_tid = thread_bundle.loop_tid](
-                                       const auto& services) {
-            called = true;
-            const auto callback_tid = std::this_thread::get_id();
-            EXPECT_NE(callback_tid, main_tid);
-            EXPECT_NE(callback_tid, loop_tid);
-            ASSERT_FALSE(services.empty());
-            for (const auto& serv : services) {
-                const auto props = serv->properties();
-                const auto name = props.getName();
-                std::cout << props;
-                serv->onPropertyChanged([](const auto& properties) {
-                    std::cout << "onPropertyChange:\n";
-                    std::cout << properties;
-                });
-                serv->setNameServers(
-                    {"8.8.8.8", "4.4.4.4"},
-                    [name, main_tid, loop_tid](auto success) {
-                        const auto callback_tid = std::this_thread::get_id();
-                        EXPECT_NE(callback_tid, main_tid);
-                        EXPECT_NE(callback_tid, loop_tid);
-                        EXPECT_TRUE(success) << "Set setNameServers for "
-                                             << name << " did not succeed";
+        auto do_on_servs = [&called, main_tid = thread_bundle.main_tid,
+                            loop_tid = thread_bundle.loop_tid](
+                               const auto& services,
+                               const bool check_thread_id = true) {
+            if (!called) {
+                called = true;
+                if (check_thread_id) {
+                    const auto callback_tid = std::this_thread::get_id();
+                    EXPECT_NE(callback_tid, main_tid);
+                    EXPECT_NE(callback_tid, loop_tid);
+                }
+                ASSERT_FALSE(services.empty());
+                for (const auto& serv : services) {
+                    const auto props = serv->properties();
+                    const auto name = props.getName();
+                    std::cout << props;
+                    serv->onPropertyChanged([](const auto& properties) {
+                        std::cout << "onPropertyChange:\n";
+                        std::cout << properties;
                     });
+                    serv->setNameServers(
+                        {"8.8.8.8", "4.4.4.4"},
+                        [name, main_tid, loop_tid](auto success) {
+                            const auto callback_tid =
+                                std::this_thread::get_id();
+                            EXPECT_NE(callback_tid, main_tid);
+                            EXPECT_NE(callback_tid, loop_tid);
+                            EXPECT_TRUE(success) << "Set setNameServers for "
+                                                 << name << " did not succeed";
+                        });
+                }
             }
-        });
+        };
+
+        if (manager->services().empty()) {
+            manager->onServicesChanged(do_on_servs);
+        } else {
+            do_on_servs(manager->services(), false);
+        }
     }
-    ASSERT_TRUE(called) << "TechnologiesChanged callback was never called";
+    ASSERT_TRUE(called) << "ServicesChanged callback was never called";
 }
 
 TEST(Connman, ForgetAndDisconnectService) {
