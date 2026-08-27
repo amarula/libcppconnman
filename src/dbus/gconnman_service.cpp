@@ -121,6 +121,20 @@ void Service::setNameServers(const std::vector<std::string>& name_servers,
                 &Service::finishAsyncCall, data.release());
 }
 
+IPv4::IPv4(const IPv4::Method method, std::string address, std::string netmask,
+           std::string gateway)
+    : method_(method),
+      address_(std::move(address)),
+      netmask_(std::move(netmask)),
+      gateway_(std::move(gateway)) {}
+
+void Service::setIPv4(const IPv4& ipv4_configuration,
+                      PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    setProperty(IPV4_CONFIGURATION_STR, ipv4_configuration.getVariant().get(),
+                nullptr, &Service::finishAsyncCall, data.release());
+}
+
 void IPv4::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, METHOD_STR) == 0U) {
         method_ =
@@ -134,6 +148,30 @@ void IPv4::update(const gchar* key, GVariant* value) {
     } else {
         LCM_LOG("Unknown property for IPv4: " << key << '\n');
     }
+}
+
+auto IPv4::getVariant() const -> VariantPtr {
+    GVariantBuilder builder;
+    g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
+    g_variant_builder_add(
+        &builder, "{sv}", METHOD_STR,
+        g_variant_new_string(
+            std::string(IPV4_METHOD_MAP.toString(method_)).c_str()));
+    if (!address_.empty()) {
+        g_variant_builder_add(&builder, "{sv}", ADDRESS_STR,
+                              g_variant_new_string(address_.c_str()));
+    }
+    if (!netmask_.empty()) {
+        g_variant_builder_add(&builder, "{sv}", NETMASK_STR,
+                              g_variant_new_string(netmask_.c_str()));
+    }
+    if (!gateway_.empty()) {
+        g_variant_builder_add(&builder, "{sv}", GATEWAY_STR,
+                              g_variant_new_string(gateway_.c_str()));
+    }
+
+    return VariantPtr{g_variant_ref_sink(g_variant_builder_end(&builder)),
+                      &g_variant_unref};
 }
 
 void IPv6::update(const gchar* key, GVariant* value) {
@@ -241,6 +279,10 @@ void ServProperties::update(const gchar* key, GVariant* value) {
         ipv4_ = (g_variant_n_children(value) != 0)
                     ? std::optional<IPv4>(IPv4(value))
                     : std::nullopt;
+    } else if (g_strcmp0(key, IPV4_CONFIGURATION_STR) == 0U) {
+        ipv4_configuration_ = (g_variant_n_children(value) != 0)
+                                  ? std::optional<IPv4>(IPv4(value))
+                                  : std::nullopt;
     } else if (g_strcmp0(key, IPV6_STR) == 0U) {
         ipv6_ = (g_variant_n_children(value) != 0)
                     ? std::optional<IPv6>(IPv6(value))
@@ -344,6 +386,11 @@ auto operator<<(std::ostream& ost, const ServProperties& obj) -> std::ostream& {
 
     if (obj.ipv4_) {
         ost << obj.ipv4_.value();
+    }
+
+    if (obj.ipv4_configuration_) {
+        ost << "Configuration ";
+        ost << obj.ipv4_configuration_.value();
     }
 
     if (obj.ipv6_) {
