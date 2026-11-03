@@ -129,6 +129,14 @@ void Service::setTimeServers(const std::vector<std::string>& time_servers,
                 &Service::finishAsyncCall, data.release());
 }
 
+void Service::setDomains(const std::vector<std::string>& domains,
+                         PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    auto variant = vector_to_as(domains);
+    setProperty(DOMAINS_CONFIGURATION_STR, variant.get(), nullptr,
+                &Service::finishAsyncCall, data.release());
+}
+
 IPv4::IPv4(const IPv4::Method method, std::string address, std::string netmask,
            std::string gateway)
     : method_(method),
@@ -375,6 +383,11 @@ void ServProperties::update(const gchar* key, GVariant* value) {
             (g_variant_n_children(value) != 0)
                 ? std::optional<std::vector<std::string>>(as_to_vector(value))
                 : std::nullopt;
+    } else if (g_strcmp0(key, DOMAINS_CONFIGURATION_STR) == 0U) {
+        domains_conf_ =
+            (g_variant_n_children(value) != 0)
+                ? std::optional<std::vector<std::string>>(as_to_vector(value))
+                : std::nullopt;
     } else if (g_strcmp0(key, TIMESERVERS_STR) == 0U) {
         time_servers_ =
             (g_variant_n_children(value) != 0)
@@ -432,6 +445,14 @@ auto operator<<(std::ostream& ost, const ServProperties& obj) -> std::ostream& {
     if (obj.domains_) {
         ost << "Domains: ";
         for (const auto& domain : obj.domains_.value()) {
+            ost << domain << ' ';
+        }
+        ost << '\n';
+    }
+
+    if (obj.domains_conf_) {
+        ost << "Domains.Configuration: ";
+        for (const auto& domain : obj.domains_conf_.value()) {
             ost << domain << ' ';
         }
         ost << '\n';
