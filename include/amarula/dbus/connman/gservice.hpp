@@ -232,6 +232,9 @@ struct ServProperties {
     [[nodiscard]] auto getProxy() const { return proxy_; }
     [[nodiscard]] auto getName() const { return name_; }
     [[nodiscard]] auto getNameservers() const { return name_servers_; }
+    [[nodiscard]] auto getNameserversConfiguration() const {
+        return name_servers_conf_;
+    }
     [[nodiscard]] auto getDomains() const { return domains_; }
     [[nodiscard]] auto getTimeservers() const { return time_servers_; }
 
