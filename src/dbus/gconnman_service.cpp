@@ -113,11 +113,34 @@ void Service::setAutoconnect(const bool autoconnect,
                 nullptr, &Service::finishAsyncCall, data.release());
 }
 
+void Service::setMDNS(const bool mdns, PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    setProperty(MDNS_CONFIGURATION_STR,
+                g_variant_new_boolean(static_cast<gboolean>(mdns)), nullptr,
+                &Service::finishAsyncCall, data.release());
+}
+
 void Service::setNameServers(const std::vector<std::string>& name_servers,
                              PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
     auto variant = vector_to_as(name_servers);
     setProperty(NAMESERVERS_CONFIGURATION_STR, variant.get(), nullptr,
+                &Service::finishAsyncCall, data.release());
+}
+
+void Service::setTimeServers(const std::vector<std::string>& time_servers,
+                             PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    auto variant = vector_to_as(time_servers);
+    setProperty(TIMESERVERS_CONFIGURATION_STR, variant.get(), nullptr,
+                &Service::finishAsyncCall, data.release());
+}
+
+void Service::setDomains(const std::vector<std::string>& domains,
+                         PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    auto variant = vector_to_as(domains);
+    setProperty(DOMAINS_CONFIGURATION_STR, variant.get(), nullptr,
                 &Service::finishAsyncCall, data.release());
 }
 
@@ -285,6 +308,21 @@ void Provider::update(const gchar* key, GVariant* value) {
     }
 }
 
+Proxy::Proxy(const Proxy::Method method, std::string url,
+             std::vector<std::string> servers,
+             std::vector<std::string> excludes)
+    : method_(method),
+      url_(std::move(url)),
+      servers_(std::move(servers)),
+      excludes_(std::move(excludes)) {}
+
+void Service::setProxy(const Proxy& proxy_configuration,
+                       PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    setProperty(PROXY_CONFIGURATION_STR, proxy_configuration.getVariant().get(),
+                nullptr, &Service::finishAsyncCall, data.release());
+}
+
 void Proxy::update(const gchar* key, GVariant* value) {
     if (g_strcmp0(key, METHOD_STR) == 0U) {
         method_ =
@@ -298,6 +336,30 @@ void Proxy::update(const gchar* key, GVariant* value) {
     } else {
         LCM_LOG("Unknown property for Proxy: " << key << '\n');
     }
+}
+
+auto Proxy::getVariant() const -> VariantPtr {
+    GVariantBuilder builder;
+    g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
+    g_variant_builder_add(
+        &builder, "{sv}", METHOD_STR,
+        g_variant_new_string(
+            std::string(PROXY_METHOD_MAP.toString(method_)).c_str()));
+    if (!url_.empty()) {
+        g_variant_builder_add(&builder, "{sv}", URL_STR,
+                              g_variant_new_string(url_.c_str()));
+    }
+    if (!servers_.empty()) {
+        g_variant_builder_add(&builder, "{sv}", SERVERS_STR,
+                              vector_to_as(servers_).get());
+    }
+    if (!excludes_.empty()) {
+        g_variant_builder_add(&builder, "{sv}", EXCLUDES_STR,
+                              vector_to_as(excludes_).get());
+    }
+
+    return VariantPtr{g_variant_ref_sink(g_variant_builder_end(&builder)),
+                      &g_variant_unref};
 }
 
 void ServProperties::update(const gchar* key, GVariant* value) {
@@ -317,6 +379,8 @@ void ServProperties::update(const gchar* key, GVariant* value) {
         autoconnect_ = g_variant_get_boolean(value) == 1U;
     } else if (g_strcmp0(key, MDNS_STR) == 0U) {
         mdns_ = g_variant_get_boolean(value) == 1U;
+    } else if (g_strcmp0(key, MDNS_CONFIGURATION_STR) == 0U) {
+        mdns_conf_ = g_variant_get_boolean(value) == 1U;
     } else if (g_strcmp0(key, STRENGTH_STR) == 0U) {
         strength_ = g_variant_get_byte(value);
     } else if (g_strcmp0(key, IPV4_STR) == 0U) {
@@ -347,6 +411,10 @@ void ServProperties::update(const gchar* key, GVariant* value) {
         proxy_ = (g_variant_n_children(value) != 0)
                      ? std::optional<Proxy>(Proxy(value))
                      : std::nullopt;
+    } else if (g_strcmp0(key, PROXY_CONFIGURATION_STR) == 0U) {
+        proxy_configuration_ = (g_variant_n_children(value) != 0)
+                                   ? std::optional<Proxy>(Proxy(value))
+                                   : std::nullopt;
     } else if (g_strcmp0(key, SECURITY_STR) == 0U) {
         security_ = (g_variant_n_children(value) != 0)
                         ? std::optional<std::vector<Security>>(
@@ -367,8 +435,18 @@ void ServProperties::update(const gchar* key, GVariant* value) {
             (g_variant_n_children(value) != 0)
                 ? std::optional<std::vector<std::string>>(as_to_vector(value))
                 : std::nullopt;
+    } else if (g_strcmp0(key, DOMAINS_CONFIGURATION_STR) == 0U) {
+        domains_conf_ =
+            (g_variant_n_children(value) != 0)
+                ? std::optional<std::vector<std::string>>(as_to_vector(value))
+                : std::nullopt;
     } else if (g_strcmp0(key, TIMESERVERS_STR) == 0U) {
         time_servers_ =
+            (g_variant_n_children(value) != 0)
+                ? std::optional<std::vector<std::string>>(as_to_vector(value))
+                : std::nullopt;
+    } else if (g_strcmp0(key, TIMESERVERS_CONFIGURATION_STR) == 0U) {
+        time_servers_conf_ =
             (g_variant_n_children(value) != 0)
                 ? std::optional<std::vector<std::string>>(as_to_vector(value))
                 : std::nullopt;
@@ -388,6 +466,7 @@ auto operator<<(std::ostream& ost, const ServProperties& obj) -> std::ostream& {
     ost << "Strength: " << static_cast<int>(obj.strength_) << '\n';
     ost << "AutoConnect: " << std::boolalpha << obj.autoconnect_ << '\n';
     ost << "mDNS: " << obj.mdns_ << '\n';
+    ost << "mDNS.Configuration: " << obj.mdns_conf_ << '\n';
     ost << "Favorite: " << obj.favorite_ << '\n';
     ost << "Immutable: " << obj.immutable_ << '\n';
     ost << "Roaming: " << obj.roaming_ << '\n';
@@ -424,9 +503,25 @@ auto operator<<(std::ostream& ost, const ServProperties& obj) -> std::ostream& {
         ost << '\n';
     }
 
+    if (obj.domains_conf_) {
+        ost << "Domains.Configuration: ";
+        for (const auto& domain : obj.domains_conf_.value()) {
+            ost << domain << ' ';
+        }
+        ost << '\n';
+    }
+
     if (obj.time_servers_) {
         ost << "TimeServers: ";
         for (const auto& tserver : obj.time_servers_.value()) {
+            ost << tserver << ' ';
+        }
+        ost << '\n';
+    }
+
+    if (obj.time_servers_conf_) {
+        ost << "TimeServers.Configuration: ";
+        for (const auto& tserver : obj.time_servers_conf_.value()) {
             ost << tserver << ' ';
         }
         ost << '\n';
@@ -460,6 +555,11 @@ auto operator<<(std::ostream& ost, const ServProperties& obj) -> std::ostream& {
 
     if (obj.proxy_) {
         ost << obj.proxy_.value();
+    }
+
+    if (obj.proxy_configuration_) {
+        ost << "Configuration ";
+        ost << obj.proxy_configuration_.value();
     }
 
     return ost;

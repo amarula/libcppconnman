@@ -52,7 +52,7 @@ constexpr auto PROVIDER_STR = "Provider";
 constexpr auto HOST_STR = "Host";
 constexpr auto DOMAIN_STR = "Domain";
 constexpr auto PROXY_STR = "Proxy";
-constexpr auto URL_STR = "Url";
+constexpr auto URL_STR = "URL";
 constexpr auto SERVERS_STR = "Servers";
 constexpr auto EXCLUDES_STR = "Excludes";
 constexpr auto SECURITY_STR = "Security";
@@ -62,8 +62,12 @@ constexpr auto REMOVE_STR = "Remove";
 constexpr auto INTERFACE_STR = "Interface";
 constexpr auto MTU_STR = "MTU";
 constexpr auto NAMESERVERS_CONFIGURATION_STR = "Nameservers.Configuration";
+constexpr auto TIMESERVERS_CONFIGURATION_STR = "Timeservers.Configuration";
+constexpr auto DOMAINS_CONFIGURATION_STR = "Domains.Configuration";
 constexpr auto IPV4_CONFIGURATION_STR = "IPv4.Configuration";
 constexpr auto IPV6_CONFIGURATION_STR = "IPv6.Configuration";
+constexpr auto PROXY_CONFIGURATION_STR = "Proxy.Configuration";
+constexpr auto MDNS_CONFIGURATION_STR = "mDNS.Configuration";
 
 // Manager interface
 constexpr auto MANAGER_INTERFACE = "net.connman.Manager";

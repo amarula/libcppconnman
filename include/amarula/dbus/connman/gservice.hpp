@@ -146,6 +146,11 @@ struct Provider : public GVariantParser {
 struct Proxy : public GVariantParser {
    public:
     enum class Method : uint8_t { Direct = 0, Auto, Manual };
+
+    explicit Proxy(Proxy::Method method, std::string url = "",
+                   std::vector<std::string> servers = {},
+                   std::vector<std::string> excludes = {});
+
     friend auto operator<<(std::ostream& ostr,
                            const Proxy& object) -> std::ostream&;
     [[nodiscard]] auto getMethod() const { return method_; }
@@ -160,8 +165,10 @@ struct Proxy : public GVariantParser {
     std::vector<std::string> excludes_;
     explicit Proxy(GVariant* variant) { parse(variant); };
     void update(const gchar* key, GVariant* value) override;
+    [[nodiscard]] auto getVariant() const -> VariantPtr override;
 
     friend class ServProperties;
+    friend class Service;
 };
 
 struct ServProperties {
@@ -216,6 +223,9 @@ struct ServProperties {
     [[nodiscard]] auto getError() const { return error_; }
     [[nodiscard]] auto isAutoconnect() const { return autoconnect_; }
     [[nodiscard]] auto isMDNSEnabled() const { return mdns_; }
+    [[nodiscard]] auto isMDNSConfigurationEnabled() const {
+        return mdns_conf_;
+    }
     [[nodiscard]] auto isFavorite() const { return favorite_; }
     [[nodiscard]] auto isImmutable() const { return immutable_; }
     [[nodiscard]] auto isRoaming() const { return roaming_; }
@@ -230,10 +240,22 @@ struct ServProperties {
     [[nodiscard]] auto getEthernet() const { return ethernet_; }
     [[nodiscard]] auto getProvider() const { return provider_; }
     [[nodiscard]] auto getProxy() const { return proxy_; }
+    [[nodiscard]] auto getProxyConfiguration() const {
+        return proxy_configuration_;
+    }
     [[nodiscard]] auto getName() const { return name_; }
     [[nodiscard]] auto getNameservers() const { return name_servers_; }
+    [[nodiscard]] auto getNameserversConfiguration() const {
+        return name_servers_conf_;
+    }
     [[nodiscard]] auto getDomains() const { return domains_; }
+    [[nodiscard]] auto getDomainsConfiguration() const {
+        return domains_conf_;
+    }
     [[nodiscard]] auto getTimeservers() const { return time_servers_; }
+    [[nodiscard]] auto getTimeserversConfiguration() const {
+        return time_servers_conf_;
+    }
 
    private:
     State state_{};
@@ -244,9 +266,12 @@ struct ServProperties {
     std::optional<std::vector<std::string>> name_servers_;
     std::optional<std::vector<std::string>> name_servers_conf_;
     std::optional<std::vector<std::string>> domains_;
+    std::optional<std::vector<std::string>> domains_conf_;
     std::optional<std::vector<std::string>> time_servers_;
+    std::optional<std::vector<std::string>> time_servers_conf_;
     bool autoconnect_{false};
     bool mdns_{false};
+    bool mdns_conf_{false};
     bool favorite_{false};
     bool immutable_{false};
     bool roaming_{false};
@@ -258,6 +283,7 @@ struct ServProperties {
     std::optional<Ethernet> ethernet_{std::nullopt};
     std::optional<Provider> provider_{std::nullopt};
     std::optional<Proxy> proxy_{std::nullopt};
+    std::optional<Proxy> proxy_configuration_{std::nullopt};
 
     void update(const gchar* key, GVariant* value);
 
@@ -277,12 +303,19 @@ class Service : public DBusProxy<ServProperties> {
     void remove(PropertiesSetCallback callback = nullptr);
     void setAutoconnect(bool autoconnect,
                         PropertiesSetCallback callback = nullptr);
+    void setMDNS(bool mdns, PropertiesSetCallback callback = nullptr);
     void setNameServers(const std::vector<std::string>& name_servers,
                         PropertiesSetCallback callback = nullptr);
+    void setTimeServers(const std::vector<std::string>& time_servers,
+                        PropertiesSetCallback callback = nullptr);
+    void setDomains(const std::vector<std::string>& domains,
+                    PropertiesSetCallback callback = nullptr);
     void setIPv4(const IPv4& ipv4_configuration,
                  PropertiesSetCallback callback = nullptr);
     void setIPv6(const IPv6& ipv6_configuration,
                  PropertiesSetCallback callback = nullptr);
+    void setProxy(const Proxy& proxy_configuration,
+                  PropertiesSetCallback callback = nullptr);
     friend class Manager;
 };
 
