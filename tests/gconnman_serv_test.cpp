@@ -17,6 +17,7 @@ using Type = Amarula::DBus::G::Connman::TechProperties::Type;
 using ServType = Amarula::DBus::G::Connman::ServProperties::Type;
 using IPv4 = Amarula::DBus::G::Connman::IPv4;
 using IPv6 = Amarula::DBus::G::Connman::IPv6;
+using Proxy = Amarula::DBus::G::Connman::Proxy;
 
 TEST(Connman, getServs) {
     bool called = false;
@@ -357,6 +358,69 @@ TEST(Connman, setIPv6Configuration) {
                             EXPECT_TRUE(success)
                                 << "Set setIPv6Configuration auto for " << name
                                 << " did not succeed";
+                        });
+                    });
+                }
+            }
+        };
+
+        if (manager->services().empty()) {
+            manager->onServicesChanged(do_on_servs);
+        } else {
+            do_on_servs(manager->services(), false);
+        }
+    }
+    ASSERT_TRUE(called) << "ServicesChanged callback was never called";
+}
+
+TEST(Connman, setProxyConfiguration) {
+    bool called = false;
+    {
+        const ThreadBundle thread_bundle;
+        const Connman connman;
+        const auto manager = connman.manager();
+
+        auto do_on_servs = [&called, main_tid = thread_bundle.main_tid,
+                            loop_tid = thread_bundle.loop_tid](
+                               const auto& services,
+                               const bool check_thread_id = true) {
+            if (!called) {
+                called = true;
+                if (check_thread_id) {
+                    const auto callback_tid = std::this_thread::get_id();
+                    EXPECT_NE(callback_tid, main_tid);
+                    EXPECT_NE(callback_tid, loop_tid);
+                }
+                ASSERT_FALSE(services.empty());
+                for (const auto& serv : services) {
+                    const auto props = serv->properties();
+                    const auto name = props.getName();
+                    std::cout << props;
+                    serv->onPropertyChanged([](const auto& properties) {
+                        std::cout << "onPropertyChange:\n";
+                        std::cout << properties;
+                    });
+                    const auto proxy_config =
+                        Proxy(Proxy::Method::Manual, "",
+                              {"proxy.example.com:8080"}, {"localhost"});
+                    serv->setProxy(proxy_config, [serv, name, main_tid,
+                                                  loop_tid](auto success) {
+                        const auto callback_tid = std::this_thread::get_id();
+                        EXPECT_NE(callback_tid, main_tid);
+                        EXPECT_NE(callback_tid, loop_tid);
+                        EXPECT_TRUE(success)
+                            << "Set setProxyConfiguration manual for " << name
+                            << " did not succeed";
+                        const auto proxy_config = Proxy(Proxy::Method::Direct);
+                        serv->setProxy(proxy_config, [name, main_tid,
+                                                      loop_tid](auto success) {
+                            const auto callback_tid =
+                                std::this_thread::get_id();
+                            EXPECT_NE(callback_tid, main_tid);
+                            EXPECT_NE(callback_tid, loop_tid);
+                            EXPECT_TRUE(success)
+                                << "Set setProxyConfiguration direct for "
+                                << name << " did not succeed";
                         });
                     });
                 }

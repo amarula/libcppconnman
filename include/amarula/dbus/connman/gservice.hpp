@@ -146,6 +146,11 @@ struct Provider : public GVariantParser {
 struct Proxy : public GVariantParser {
    public:
     enum class Method : uint8_t { Direct = 0, Auto, Manual };
+
+    explicit Proxy(Proxy::Method method, std::string url = "",
+                   std::vector<std::string> servers = {},
+                   std::vector<std::string> excludes = {});
+
     friend auto operator<<(std::ostream& ostr,
                            const Proxy& object) -> std::ostream&;
     [[nodiscard]] auto getMethod() const { return method_; }
@@ -160,8 +165,10 @@ struct Proxy : public GVariantParser {
     std::vector<std::string> excludes_;
     explicit Proxy(GVariant* variant) { parse(variant); };
     void update(const gchar* key, GVariant* value) override;
+    [[nodiscard]] auto getVariant() const -> VariantPtr override;
 
     friend class ServProperties;
+    friend class Service;
 };
 
 struct ServProperties {
@@ -230,6 +237,9 @@ struct ServProperties {
     [[nodiscard]] auto getEthernet() const { return ethernet_; }
     [[nodiscard]] auto getProvider() const { return provider_; }
     [[nodiscard]] auto getProxy() const { return proxy_; }
+    [[nodiscard]] auto getProxyConfiguration() const {
+        return proxy_configuration_;
+    }
     [[nodiscard]] auto getName() const { return name_; }
     [[nodiscard]] auto getNameservers() const { return name_servers_; }
     [[nodiscard]] auto getNameserversConfiguration() const {
@@ -269,6 +279,7 @@ struct ServProperties {
     std::optional<Ethernet> ethernet_{std::nullopt};
     std::optional<Provider> provider_{std::nullopt};
     std::optional<Proxy> proxy_{std::nullopt};
+    std::optional<Proxy> proxy_configuration_{std::nullopt};
 
     void update(const gchar* key, GVariant* value);
 
@@ -298,6 +309,8 @@ class Service : public DBusProxy<ServProperties> {
                  PropertiesSetCallback callback = nullptr);
     void setIPv6(const IPv6& ipv6_configuration,
                  PropertiesSetCallback callback = nullptr);
+    void setProxy(const Proxy& proxy_configuration,
+                  PropertiesSetCallback callback = nullptr);
     friend class Manager;
 };
 
