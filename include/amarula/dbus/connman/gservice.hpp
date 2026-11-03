@@ -237,6 +237,9 @@ struct ServProperties {
     }
     [[nodiscard]] auto getDomains() const { return domains_; }
     [[nodiscard]] auto getTimeservers() const { return time_servers_; }
+    [[nodiscard]] auto getTimeserversConfiguration() const {
+        return time_servers_conf_;
+    }
 
    private:
     State state_{};
@@ -248,6 +251,7 @@ struct ServProperties {
     std::optional<std::vector<std::string>> name_servers_conf_;
     std::optional<std::vector<std::string>> domains_;
     std::optional<std::vector<std::string>> time_servers_;
+    std::optional<std::vector<std::string>> time_servers_conf_;
     bool autoconnect_{false};
     bool mdns_{false};
     bool favorite_{false};
@@ -281,6 +285,8 @@ class Service : public DBusProxy<ServProperties> {
     void setAutoconnect(bool autoconnect,
                         PropertiesSetCallback callback = nullptr);
     void setNameServers(const std::vector<std::string>& name_servers,
+                        PropertiesSetCallback callback = nullptr);
+    void setTimeServers(const std::vector<std::string>& time_servers,
                         PropertiesSetCallback callback = nullptr);
     void setIPv4(const IPv4& ipv4_configuration,
                  PropertiesSetCallback callback = nullptr);

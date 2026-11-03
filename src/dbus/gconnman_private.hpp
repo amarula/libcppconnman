@@ -62,6 +62,7 @@ constexpr auto REMOVE_STR = "Remove";
 constexpr auto INTERFACE_STR = "Interface";
 constexpr auto MTU_STR = "MTU";
 constexpr auto NAMESERVERS_CONFIGURATION_STR = "Nameservers.Configuration";
+constexpr auto TIMESERVERS_CONFIGURATION_STR = "Timeservers.Configuration";
 constexpr auto IPV4_CONFIGURATION_STR = "IPv4.Configuration";
 constexpr auto IPV6_CONFIGURATION_STR = "IPv6.Configuration";
 

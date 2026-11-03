@@ -121,6 +121,14 @@ void Service::setNameServers(const std::vector<std::string>& name_servers,
                 &Service::finishAsyncCall, data.release());
 }
 
+void Service::setTimeServers(const std::vector<std::string>& time_servers,
+                             PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    auto variant = vector_to_as(time_servers);
+    setProperty(TIMESERVERS_CONFIGURATION_STR, variant.get(), nullptr,
+                &Service::finishAsyncCall, data.release());
+}
+
 IPv4::IPv4(const IPv4::Method method, std::string address, std::string netmask,
            std::string gateway)
     : method_(method),
@@ -372,6 +380,11 @@ void ServProperties::update(const gchar* key, GVariant* value) {
             (g_variant_n_children(value) != 0)
                 ? std::optional<std::vector<std::string>>(as_to_vector(value))
                 : std::nullopt;
+    } else if (g_strcmp0(key, TIMESERVERS_CONFIGURATION_STR) == 0U) {
+        time_servers_conf_ =
+            (g_variant_n_children(value) != 0)
+                ? std::optional<std::vector<std::string>>(as_to_vector(value))
+                : std::nullopt;
     } else {
         LCM_LOG("Unknown or empty property for Service: " << key << '\n');
     }
@@ -427,6 +440,14 @@ auto operator<<(std::ostream& ost, const ServProperties& obj) -> std::ostream& {
     if (obj.time_servers_) {
         ost << "TimeServers: ";
         for (const auto& tserver : obj.time_servers_.value()) {
+            ost << tserver << ' ';
+        }
+        ost << '\n';
+    }
+
+    if (obj.time_servers_conf_) {
+        ost << "TimeServers.Configuration: ";
+        for (const auto& tserver : obj.time_servers_conf_.value()) {
             ost << tserver << ' ';
         }
         ost << '\n';
