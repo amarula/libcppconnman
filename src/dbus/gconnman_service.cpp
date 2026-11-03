@@ -113,6 +113,13 @@ void Service::setAutoconnect(const bool autoconnect,
                 nullptr, &Service::finishAsyncCall, data.release());
 }
 
+void Service::setMDNS(const bool mdns, PropertiesSetCallback callback) {
+    auto data = prepareCallback(std::move(callback));
+    setProperty(MDNS_CONFIGURATION_STR,
+                g_variant_new_boolean(static_cast<gboolean>(mdns)), nullptr,
+                &Service::finishAsyncCall, data.release());
+}
+
 void Service::setNameServers(const std::vector<std::string>& name_servers,
                              PropertiesSetCallback callback) {
     auto data = prepareCallback(std::move(callback));
@@ -372,6 +379,8 @@ void ServProperties::update(const gchar* key, GVariant* value) {
         autoconnect_ = g_variant_get_boolean(value) == 1U;
     } else if (g_strcmp0(key, MDNS_STR) == 0U) {
         mdns_ = g_variant_get_boolean(value) == 1U;
+    } else if (g_strcmp0(key, MDNS_CONFIGURATION_STR) == 0U) {
+        mdns_conf_ = g_variant_get_boolean(value) == 1U;
     } else if (g_strcmp0(key, STRENGTH_STR) == 0U) {
         strength_ = g_variant_get_byte(value);
     } else if (g_strcmp0(key, IPV4_STR) == 0U) {
@@ -457,6 +466,7 @@ auto operator<<(std::ostream& ost, const ServProperties& obj) -> std::ostream& {
     ost << "Strength: " << static_cast<int>(obj.strength_) << '\n';
     ost << "AutoConnect: " << std::boolalpha << obj.autoconnect_ << '\n';
     ost << "mDNS: " << obj.mdns_ << '\n';
+    ost << "mDNS.Configuration: " << obj.mdns_conf_ << '\n';
     ost << "Favorite: " << obj.favorite_ << '\n';
     ost << "Immutable: " << obj.immutable_ << '\n';
     ost << "Roaming: " << obj.roaming_ << '\n';

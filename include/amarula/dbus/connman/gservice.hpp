@@ -223,6 +223,9 @@ struct ServProperties {
     [[nodiscard]] auto getError() const { return error_; }
     [[nodiscard]] auto isAutoconnect() const { return autoconnect_; }
     [[nodiscard]] auto isMDNSEnabled() const { return mdns_; }
+    [[nodiscard]] auto isMDNSConfigurationEnabled() const {
+        return mdns_conf_;
+    }
     [[nodiscard]] auto isFavorite() const { return favorite_; }
     [[nodiscard]] auto isImmutable() const { return immutable_; }
     [[nodiscard]] auto isRoaming() const { return roaming_; }
@@ -268,6 +271,7 @@ struct ServProperties {
     std::optional<std::vector<std::string>> time_servers_conf_;
     bool autoconnect_{false};
     bool mdns_{false};
+    bool mdns_conf_{false};
     bool favorite_{false};
     bool immutable_{false};
     bool roaming_{false};
@@ -299,6 +303,7 @@ class Service : public DBusProxy<ServProperties> {
     void remove(PropertiesSetCallback callback = nullptr);
     void setAutoconnect(bool autoconnect,
                         PropertiesSetCallback callback = nullptr);
+    void setMDNS(bool mdns, PropertiesSetCallback callback = nullptr);
     void setNameServers(const std::vector<std::string>& name_servers,
                         PropertiesSetCallback callback = nullptr);
     void setTimeServers(const std::vector<std::string>& time_servers,
